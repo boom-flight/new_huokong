@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "RTT_EXEC_PATH": "/usr/bin", "RTT_CC": "gcc" }
+    },
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "scons -j$(nproc)",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "build (重建clangd索引)",
+            "type": "shell",
+            "command": "scons -c && bear -- scons -j$(nproc)",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "scons -c",
+            "problemMatcher": []
+        },
+        {
+            "label": "flash (ST-Link)",
+            "type": "shell",
+            "command": "openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c 'program rtthread.bin 0x08000000 verify reset exit'",
+            "dependsOn": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "menuconfig",
+            "type": "shell",
+            "command": "scons --menuconfig",
+            "problemMatcher": []
+        },
+        {
+            "label": "msh 串口控制台 (UART6)",
+            "type": "shell",
+            "command": "picocom -b 115200 /dev/ttyUSB0",
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

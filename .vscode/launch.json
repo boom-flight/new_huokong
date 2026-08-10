@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug (ST-Link + OpenOCD)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "executable": "${workspaceFolder}/rt-thread.elf",
+            "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
+            "device": "STM32F427II",
+            "svdFile": "${workspaceFolder}/.vscode/STM32F427.svd",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "build",
+            "showDevDebugOutput": "none"
+        },
+        {
+            "name": "Attach (不复位，附加到运行中程序)",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "openocd",
+            "executable": "${workspaceFolder}/rt-thread.elf",
+            "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
+            "device": "STM32F427II",
+            "svdFile": "${workspaceFolder}/.vscode/STM32F427.svd"
+        }
+    ]
+}

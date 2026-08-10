@@ -1,0 +1,51 @@
+# ===== SCons 构建产物 =====
+build/
+*.o
+*.obj
+*.d
+*.dep
+*.i
+*.lib
+*.out
+*.dblite
+cconfig.h
+
+# 链接/烧录产物（rt-thread.elf / rtthread.bin / rt-thread.map）
+*.elf
+*.bin
+*.hex
+*.axf
+*.map
+
+# ===== 工具缓存 =====
+__pycache__/
+*.pyc
+.cache/
+.cmsis/
+compile_commands.json
+
+# menuconfig 备份（.config 本体保留跟踪）
+*.old
+
+# RT-Thread env 包管理器产物（packages/SConscript 保留跟踪）
+packages/packages.dbsqlite
+packages/pkgs.json
+packages/pkgs_error.json
+
+# ===== Keil 遗留（project.uvprojx 作历史存档保留跟踪）=====
+*.uvguix*
+*.uvopt
+*.uvoptx
+DebugConfig/
+RTE/
+EventRecorderStub.scvd
+JLinkLog.txt
+JLinkSettings.ini
+
+# ===== 历史手工备份 =====
+*.zip
+
+# ===== 编辑器/系统临时文件 =====
+*~
+*.bak
+.DS_Store

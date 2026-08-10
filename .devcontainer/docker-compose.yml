@@ -1,0 +1,35 @@
+services:
+  develop:
+    image: qzhhhi/rmcs-develop:latest-full
+    privileged: true
+    network_mode: host
+    init: true
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    working_dir: /workspaces/new_huokong
+    volumes:
+      - type: bind
+        source: /dev
+        target: /dev
+      - type: bind
+        source: ..
+        target: /workspaces/new_huokong
+      # AI 工具链配置直通（与 creeper-flight 思路一致）：容器内 claude/codex/opencode
+      # 复用宿主机的登录态、记忆与配置
+      - type: bind
+        source: ${HOME}/.claude
+        target: /home/ubuntu/.claude
+      - type: bind
+        source: ${HOME}/.claude.json
+        target: /home/ubuntu/.claude.json
+      - type: bind
+        source: ${HOME}/CLAUDE.md
+        target: /home/ubuntu/CLAUDE.md
+      - type: bind
+        source: ${HOME}/.codex
+        target: /home/ubuntu/.codex
+      - type: bind
+        source: ${HOME}/.config/opencode
+        target: /home/ubuntu/.config/opencode
+      - type: bind
+        source: ${HOME}/.local/share/opencode
+        target: /home/ubuntu/.local/share/opencode

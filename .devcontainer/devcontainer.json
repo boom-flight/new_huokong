@@ -1,0 +1,16 @@
+{
+    "name": "new-huokong-develop",
+    "dockerComposeFile": ["docker-compose.yml"],
+    "service": "develop",
+    "workspaceFolder": "/workspaces/new_huokong",
+    "postCreateCommand": "bash .script/setup-ubuntu.sh",
+    "customizations": {
+        "vscode": {
+            "settings": { "remote.autoForwardPorts": false },
+            "extensions": [
+                "llvm-vs-code-extensions.vscode-clangd",
+                "marus25.cortex-debug"
+            ]
+        }
+    }
+}
