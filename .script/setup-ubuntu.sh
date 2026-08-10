@@ -1,4 +1,4 @@
-c#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Ubuntu 环境一键配置：嵌入式工具链 + 烧录/调试/串口工具
 # 用途：devcontainer postCreate（qzhhhi/rmcs-develop 容器）或裸 Ubuntu 机器；可重复执行
 set -euo pipefail
