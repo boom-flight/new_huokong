@@ -15,9 +15,9 @@ command -v arm-none-eabi-gdb >/dev/null || \
 # 串口权限（裸 Ubuntu 需注销重登生效；privileged 容器内通常无感）
 sudo usermod -aG dialout "$USER" 2>/dev/null || true
 
-# AI 工具链（有 npm 才装；配置/登录态由 docker-compose.yml 挂载宿主机目录提供）
-if command -v npm >/dev/null; then
-    sudo npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai
-fi
+# AI 工具链（配置/登录态由 docker-compose.yml 挂载宿主机目录提供）；缺 npm 则先装
+command -v npm >/dev/null || \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs npm
+sudo npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai
 
 echo "setup-ubuntu 完成：$(arm-none-eabi-gcc --version | head -1)"
