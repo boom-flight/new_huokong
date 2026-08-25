@@ -18,3 +18,8 @@ done
 
 test ! -d .script || fail '.script compatibility directory still exists'
 test ! -d tests/build || fail 'host test artifacts are outside root build'
+
+outside_object=$(find algorithm applications board drivers libraries packages \
+    protocol rt-thread -type f \( -name '*.o' -o -name '*.obj' \) -print -quit)
+test -z "$outside_object" \
+    || fail "generated object is outside root build: $outside_object"

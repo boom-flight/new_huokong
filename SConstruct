@@ -2,6 +2,7 @@ import os
 import sys
 
 import rtconfig
+from SCons.Builder import ListEmitter
 
 RTT_ROOT = os.getenv('RTT_ROOT', os.path.join(os.getcwd(), 'rt-thread'))
 sys.path.append(os.path.join(RTT_ROOT, 'tools'))
@@ -17,6 +18,14 @@ def bsp_pkg_check():
     if not all(os.path.isdir(path) for path in required):
         print('Vendored dependency package is missing; restore the pinned source snapshot.')
         Exit(1)
+
+
+def centralize_object_target(target, source, env):
+    root = env.Dir('#').abspath
+    target_path = os.path.relpath(target[0].abspath, root)
+    if target_path != 'build' and not target_path.startswith('build' + os.sep):
+        target[0] = env.File(os.path.join('build', 'objects', target_path))
+    return target, source
 
 
 RegisterPreBuildingAction(bsp_pkg_check)
@@ -45,6 +54,12 @@ env = Environment(
 env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
 env.AppendUnique(CPPPATH=['algorithm', 'drivers', 'protocol'])
 env.AppendUnique(LIBS=['m'])
+object_builder = env['BUILDERS']['StaticObject']
+for suffix, emitter in object_builder.emitter.items():
+    object_builder.emitter[suffix] = ListEmitter([
+        centralize_object_target,
+        emitter,
+    ])
 
 Export('env')
 Export('RTT_ROOT')
@@ -70,3 +85,5 @@ binary = env.Command(BIN_TARGET, program,
 env.SideEffect(MAP_TARGET, program)
 env.Clean(program, [BIN_TARGET, MAP_TARGET])
 Default(program, binary)
+if GetOption('cdb'):
+    Default('build/compile_commands.json')
