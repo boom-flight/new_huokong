@@ -1,4 +1,5 @@
 Import('env')
+from building import DefineGroup
 
 module_root = Dir('#src/modules').abspath
 transport_env = env.Clone(BUILDERS={})
@@ -12,5 +13,6 @@ transport_objects = transport_env.Object(
     target='#build/firmware/modules/transport/dma_tx_state',
     source='dma_tx_state.c',
 )
+transport_group = DefineGroup('Transport', transport_objects, depend=[''])
 
-Return('transport_objects')
+Return('transport_group')
