@@ -7,13 +7,15 @@ scripts = [
     'src/modules/attitude/SConscript',
     'src/modules/devices/bmi088/SConscript',
     'src/modules/protocols/imu_telemetry/SConscript',
+    'src/platform/devices/SConscript',
+    'src/platform/time/SConscript',
+    'src/platform/transport/SConscript',
     'src/kernel/imu/SConscript',
     'applications/SConscript',
     'src/kernel/telemetry/SConscript',
     'board/SConscript',
     'src/modules/timing/SConscript',
     'src/modules/transport/SConscript',
-    'drivers/SConscript',
     'packages/SConscript',
 ]
 

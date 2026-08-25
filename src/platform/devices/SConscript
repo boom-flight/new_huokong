@@ -1,0 +1,32 @@
+Import('env')
+from building import DefineGroup
+
+platform_root = Dir('#src/platform').abspath
+module_root = Dir('#src/modules').abspath
+device_root = Dir('#src/modules/devices').abspath
+hardware_paths = [
+    Dir('#').abspath,
+    Dir('#board/CubeMX_Config/Inc').abspath,
+    Dir('#packages/CMSIS-Core-latest/Include').abspath,
+    Dir('#packages/stm32f1_cmsis_driver-latest/Include').abspath,
+    Dir('#packages/stm32f1_hal_driver-latest/Inc').abspath,
+    Dir('#rt-thread/include').abspath,
+]
+device_env = env.Clone(BUILDERS={})
+device_env.Tool('cc')
+device_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=hardware_paths + [platform_root, module_root, device_root],
+)
+device_env.AppendUnique(CPPDEFINES=['USE_HAL_DRIVER', '__RTTHREAD__'])
+device_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    device_env.Tool('compilation_db')
+
+device_objects = device_env.Object(
+    target='#build/firmware/platform/devices/bmi088_stm32',
+    source='bmi088_stm32.c',
+)
+device_group = DefineGroup('STM32 BMI088', device_objects, depend=[''])
+
+Return('device_group')

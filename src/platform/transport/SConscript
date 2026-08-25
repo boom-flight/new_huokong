@@ -1,0 +1,27 @@
+Import('env')
+from building import DefineGroup
+
+module_root = Dir('#src/modules').abspath
+hardware_paths = [
+    Dir('#').abspath,
+    Dir('#board/CubeMX_Config/Inc').abspath,
+    Dir('#packages/CMSIS-Core-latest/Include').abspath,
+    Dir('#packages/stm32f1_cmsis_driver-latest/Include').abspath,
+    Dir('#packages/stm32f1_hal_driver-latest/Inc').abspath,
+    Dir('#rt-thread/include').abspath,
+]
+uart_env = env.Clone(BUILDERS={})
+uart_env.Tool('cc')
+uart_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=hardware_paths + [module_root])
+uart_env.AppendUnique(CPPDEFINES=['USE_HAL_DRIVER', '__RTTHREAD__'])
+uart_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    uart_env.Tool('compilation_db')
+
+uart_objects = uart_env.Object(
+    target='#build/firmware/platform/transport/telemetry_uart_stm32',
+    source='telemetry_uart_stm32.c',
+)
+uart_group = DefineGroup('STM32 Telemetry UART', uart_objects, depend=[''])
+
+Return('uart_group')

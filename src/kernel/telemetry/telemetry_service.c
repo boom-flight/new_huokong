@@ -1,10 +1,10 @@
 #include "telemetry/telemetry_service.h"
 
-#include "drivers/bmi088_port.h"
 #include "imu/imu_service.h"
 #include "imu/imu_snapshot.h"
 #include "imu_telemetry/imu_telemetry.h"
 #include "telemetry/telemetry_policy.h"
+#include "transport/telemetry_uart_stm32.h"
 
 #include <rtthread.h>
 
@@ -36,7 +36,7 @@ static void telemetry_thread_entry(void *parameter)
         uint16_t sequence;
 
         (void)rt_thread_delay_until(&wake_tick, 5u);
-        if (bmi088_port_telemetry_take_failure()) {
+        if (telemetry_uart_stm32_take_failure()) {
             record_drop();
         }
         if (!imu_snapshot_read(&snapshot)) {
@@ -44,12 +44,12 @@ static void telemetry_thread_entry(void *parameter)
                 .status = IMU_STATUS_TIMESTAMP_INVALID,
             };
         }
-        if (bmi088_port_telemetry_busy()) {
+        if (telemetry_uart_stm32_busy()) {
             (void)telemetry_attempt_begin(&telemetry_attempt);
             record_drop();
             continue;
         }
-        if (bmi088_port_telemetry_take_failure()) {
+        if (telemetry_uart_stm32_take_failure()) {
             record_drop();
         }
 
@@ -67,7 +67,7 @@ static void telemetry_thread_entry(void *parameter)
         };
         frame = telemetry_tx_buffers[next_buffer];
         imu_telemetry_encode(sequence, &sample, frame);
-        if (bmi088_port_telemetry_try_start(
+        if (telemetry_uart_stm32_try_start(
                 frame, IMU_TELEMETRY_FRAME_SIZE)) {
             next_buffer ^= 1u;
             telemetry_attempt_queued(&telemetry_attempt);

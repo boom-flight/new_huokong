@@ -3,8 +3,10 @@
 #include "attitude/imu_calibration.h"
 #include "attitude/mahony.h"
 #include "bmi088/bmi088.h"
-#include "drivers/bmi088_port.h"
+#include "devices/bmi088_stm32.h"
 #include "imu/imu_policy.h"
+#include "time/monotonic_clock_stm32.h"
+#include "transport/telemetry_uart_stm32.h"
 
 #include <board.h>
 #include <drv_gpio.h>
@@ -16,6 +18,8 @@
 #define DEG_TO_RAD 0.01745329251994329577f
 #define IMU_THREAD_PRIORITY 5u
 #define IMU_THREAD_STACK_SIZE 768u
+#define IMU_EVENT_ACCEL (1u << 0)
+#define IMU_EVENT_GYRO (1u << 1)
 #define STATE_LED_PIN GET_PIN(B, 6)
 
 typedef struct {
@@ -59,6 +63,22 @@ static bool service_started;
 
 static void publish_runtime_snapshot(imu_runtime_t *runtime);
 static bool service_gyro_expiry(imu_runtime_t *runtime, uint32_t now_us);
+
+static void notify_data_ready(void *context, uint32_t event_mask)
+{
+    struct rt_event *event = context;
+    uint32_t events = 0u;
+
+    if ((event_mask & BMI088_DRDY_EVENT_ACCEL) != 0u) {
+        events |= IMU_EVENT_ACCEL;
+    }
+    if ((event_mask & BMI088_DRDY_EVENT_GYRO) != 0u) {
+        events |= IMU_EVENT_GYRO;
+    }
+    if (events != 0u) {
+        (void)rt_event_send(event, events);
+    }
+}
 
 static bool tick_reached(rt_tick_t now, rt_tick_t deadline)
 {
@@ -178,7 +198,7 @@ static void service_housekeeping(imu_runtime_t *runtime)
 {
     const rt_tick_t now = rt_tick_get();
 
-    if (service_gyro_expiry(runtime, bmi088_port_timestamp_us())) {
+    if (service_gyro_expiry(runtime, monotonic_clock_stm32_now_us())) {
         publish_runtime_snapshot(runtime);
     }
     update_state_led(runtime, now);
@@ -191,12 +211,13 @@ static rt_tick_t housekeeping_wait(const imu_runtime_t *runtime)
     rt_tick_t wait = (rt_tick_t)imu_housekeeping_wait_ticks(
         (uint32_t)now, (uint32_t)runtime->led_deadline,
         (uint32_t)runtime->diagnostics_deadline);
-    const bmi088_drdy_latch_t gyro_latch = bmi088_port_gyro_latch();
+    const bmi088_drdy_latch_t gyro_latch = bmi088_stm32_gyro_latch();
 
     if (runtime->state == IMU_RUNNING && !runtime->gyro_expired &&
         gyro_latch.sequence == runtime->consumed_gyro_sequence) {
         const uint32_t delay_us = imu_gyro_expiry_delay_us(
-            runtime->last_gyro_timestamp_valid, bmi088_port_timestamp_us(),
+            runtime->last_gyro_timestamp_valid,
+            monotonic_clock_stm32_now_us(),
             runtime->last_gyro_timestamp_us);
 
         if (delay_us != UINT32_MAX) {
@@ -253,7 +274,7 @@ static void publish_runtime_snapshot(imu_runtime_t *runtime)
 
 static bool service_gyro_expiry(imu_runtime_t *runtime, uint32_t now_us)
 {
-    const bmi088_drdy_latch_t gyro_latch = bmi088_port_gyro_latch();
+    const bmi088_drdy_latch_t gyro_latch = bmi088_stm32_gyro_latch();
 
     return imu_gyro_expiry_transition(
         runtime->state,
@@ -320,8 +341,8 @@ static void reset_after_sensor_init(imu_runtime_t *runtime)
 {
     const imu_diagnostics_t diagnostics = runtime->snapshot.diagnostics;
     const imu_vec3f_t last_accel_g = runtime->snapshot.accel_g;
-    const bmi088_drdy_latch_t accel_latch = bmi088_port_accel_latch();
-    const bmi088_drdy_latch_t gyro_latch = bmi088_port_gyro_latch();
+    const bmi088_drdy_latch_t accel_latch = bmi088_stm32_accel_latch();
+    const bmi088_drdy_latch_t gyro_latch = bmi088_stm32_gyro_latch();
 
     runtime->estimator = (mahony_t){
         .q = {1.0f, 0.0f, 0.0f, 0.0f},
@@ -347,7 +368,7 @@ static void reset_after_sensor_init(imu_runtime_t *runtime)
     runtime->last_gyro_timestamp_valid = false;
     runtime->gyro_expired = false;
     transition_state(runtime, IMU_CALIBRATING);
-    runtime->snapshot.timestamp_us = bmi088_port_timestamp_us();
+    runtime->snapshot.timestamp_us = monotonic_clock_stm32_now_us();
     publish_runtime_snapshot(runtime);
 }
 
@@ -356,7 +377,7 @@ static void initialize_sensor(imu_runtime_t *runtime)
     uint8_t accel_id = 0u;
     uint8_t gyro_id = 0u;
     const bmi088_result_t result =
-        bmi088_init(&runtime->sensor, bmi088_port_bus(), BMI088_AXIS_MAP,
+        bmi088_init(&runtime->sensor, bmi088_stm32_bus(), BMI088_AXIS_MAP,
                     &accel_id, &gyro_id);
 
     if (result != BMI088_OK) {
@@ -367,7 +388,7 @@ static void initialize_sensor(imu_runtime_t *runtime)
         runtime->state_conditions = IMU_STATUS_BMI_INIT_FAILED;
         runtime->accel_conditions = 0u;
         runtime->gyro_conditions = IMU_STATUS_TIMESTAMP_INVALID;
-        runtime->snapshot.timestamp_us = bmi088_port_timestamp_us();
+        runtime->snapshot.timestamp_us = monotonic_clock_stm32_now_us();
         publish_runtime_snapshot(runtime);
         return;
     }
@@ -378,7 +399,7 @@ static void initialize_sensor(imu_runtime_t *runtime)
 
 static void process_accel(imu_runtime_t *runtime)
 {
-    const bmi088_drdy_latch_t latch = bmi088_port_accel_latch();
+    const bmi088_drdy_latch_t latch = bmi088_stm32_accel_latch();
     bmi088_raw_sample_t raw;
     imu_vec3f_t accel_g;
 
@@ -415,7 +436,7 @@ static void process_accel(imu_runtime_t *runtime)
                                     latch.timestamp_us)) {
         runtime->accel_conditions |= IMU_STATUS_ACCEL_CORRECTION_INVALID;
     }
-    (void)service_gyro_expiry(runtime, bmi088_port_timestamp_us());
+    (void)service_gyro_expiry(runtime, monotonic_clock_stm32_now_us());
     publish_runtime_snapshot(runtime);
 }
 
@@ -444,7 +465,7 @@ static void process_calibration_gyro(imu_runtime_t *runtime,
                                      imu_dt_action_t action,
                                      bool overrun)
 {
-    const bmi088_drdy_latch_t newest_latch = bmi088_port_accel_latch();
+    const bmi088_drdy_latch_t newest_latch = bmi088_stm32_accel_latch();
     const bool accel_valid =
         runtime->newest_accel_valid &&
         imu_accel_correction_valid(
@@ -484,7 +505,7 @@ static void process_running_gyro(imu_runtime_t *runtime,
         gyro_dps, runtime->calibration.gyro_bias_dps);
 
     if (had_baseline && action == IMU_DT_INTEGRATE) {
-        const bmi088_drdy_latch_t newest_latch = bmi088_port_accel_latch();
+        const bmi088_drdy_latch_t newest_latch = bmi088_stm32_accel_latch();
 
         correction_valid =
             runtime->newest_accel_valid &&
@@ -512,7 +533,7 @@ static void process_running_gyro(imu_runtime_t *runtime,
 
 static void process_gyro(imu_runtime_t *runtime)
 {
-    const bmi088_drdy_latch_t latch = bmi088_port_gyro_latch();
+    const bmi088_drdy_latch_t latch = bmi088_stm32_gyro_latch();
     const bool newer_sample =
         latch.sequence != runtime->consumed_gyro_sequence;
     const bool had_baseline = runtime->gyro_baseline_valid;
@@ -623,16 +644,16 @@ static void imu_thread_entry(void *parameter)
             wait_fault_retry(&runtime);
             continue;
         }
-        if (rt_event_recv(&imu_event, BMI088_EVENT_ACCEL | BMI088_EVENT_GYRO,
+        if (rt_event_recv(&imu_event, IMU_EVENT_ACCEL | IMU_EVENT_GYRO,
                           RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR,
                           housekeeping_wait(&runtime), &received) != RT_EOK) {
             continue;
         }
-        if ((received & BMI088_EVENT_GYRO) != 0u) {
+        if ((received & IMU_EVENT_GYRO) != 0u) {
             process_gyro(&runtime);
         }
         if (runtime.state != IMU_FAULT_RETRY &&
-            (received & BMI088_EVENT_ACCEL) != 0u) {
+            (received & IMU_EVENT_ACCEL) != 0u) {
             process_accel(&runtime);
         }
     }
@@ -651,8 +672,17 @@ bool imu_service_init(void)
     active_snapshot = 0u;
     telemetry_drop_count = 0u;
 
+    if (!monotonic_clock_stm32_init()) {
+        return false;
+    }
+    if (!telemetry_uart_stm32_init()) {
+        monotonic_clock_stm32_deinit();
+        return false;
+    }
     result = rt_event_init(&imu_event, "imu_evt", RT_IPC_FLAG_FIFO);
     if (result != RT_EOK) {
+        telemetry_uart_stm32_deinit();
+        monotonic_clock_stm32_deinit();
         return false;
     }
     result = rt_thread_init(&imu_thread, "imu", imu_thread_entry, NULL,
@@ -660,18 +690,24 @@ bool imu_service_init(void)
                             IMU_THREAD_PRIORITY, 10u);
     if (result != RT_EOK) {
         (void)rt_event_detach(&imu_event);
+        telemetry_uart_stm32_deinit();
+        monotonic_clock_stm32_deinit();
         return false;
     }
-    if (!bmi088_port_init(&imu_event)) {
+    if (!bmi088_stm32_init(notify_data_ready, &imu_event)) {
         (void)rt_thread_detach(&imu_thread);
         (void)rt_event_detach(&imu_event);
+        telemetry_uart_stm32_deinit();
+        monotonic_clock_stm32_deinit();
         return false;
     }
     result = rt_thread_startup(&imu_thread);
     if (result != RT_EOK) {
-        bmi088_port_deinit();
+        bmi088_stm32_deinit();
         (void)rt_thread_detach(&imu_thread);
         (void)rt_event_detach(&imu_event);
+        telemetry_uart_stm32_deinit();
+        monotonic_clock_stm32_deinit();
         return false;
     }
     service_started = true;

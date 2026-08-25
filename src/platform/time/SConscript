@@ -1,0 +1,27 @@
+Import('env')
+from building import DefineGroup
+
+module_root = Dir('#src/modules').abspath
+hardware_paths = [
+    Dir('#').abspath,
+    Dir('#board/CubeMX_Config/Inc').abspath,
+    Dir('#packages/CMSIS-Core-latest/Include').abspath,
+    Dir('#packages/stm32f1_cmsis_driver-latest/Include').abspath,
+    Dir('#packages/stm32f1_hal_driver-latest/Inc').abspath,
+    Dir('#rt-thread/include').abspath,
+]
+clock_env = env.Clone(BUILDERS={})
+clock_env.Tool('cc')
+clock_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=hardware_paths + [module_root])
+clock_env.AppendUnique(CPPDEFINES=['USE_HAL_DRIVER', '__RTTHREAD__'])
+clock_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    clock_env.Tool('compilation_db')
+
+clock_objects = clock_env.Object(
+    target='#build/firmware/platform/time/monotonic_clock_stm32',
+    source='monotonic_clock_stm32.c',
+)
+clock_group = DefineGroup('STM32 Monotonic Clock', clock_objects, depend=[''])
+
+Return('clock_group')

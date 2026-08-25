@@ -3,8 +3,8 @@ from building import DefineGroup
 
 kernel_root = Dir('#src/kernel').abspath
 module_root = Dir('#src/modules').abspath
-device_root = Dir('#src/modules/devices').abspath
 protocol_root = Dir('#src/modules/protocols').abspath
+platform_root = Dir('#src/platform').abspath
 
 policy_env = env.Clone(BUILDERS={})
 policy_env.Tool('cc')
@@ -18,7 +18,7 @@ service_group = DefineGroup(
     ['telemetry_service.c'],
     depend=[''],
     CPPPATH=[kernel_root, module_root, protocol_root],
-    LOCAL_CPPPATH=[device_root],
+    LOCAL_CPPPATH=[platform_root],
     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
 )
 policy_objects = policy_env.Object(
