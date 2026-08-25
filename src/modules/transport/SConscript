@@ -1,13 +1,16 @@
-from building import *
+Import('env')
 
 module_root = Dir('#src/modules').abspath
+transport_env = env.Clone(BUILDERS={})
+transport_env.Tool('cc')
+transport_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+transport_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    transport_env.Tool('compilation_db')
 
-transport_group = DefineGroup(
-    'Transport',
-    ['dma_tx_state.c'],
-    depend=[''],
-    CPPPATH=[module_root],
-    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
+transport_objects = transport_env.Object(
+    target='#build/firmware/modules/transport/dma_tx_state',
+    source='dma_tx_state.c',
 )
 
-Return('transport_group')
+Return('transport_objects')

@@ -1,13 +1,16 @@
-from building import *
+Import('env')
 
 module_root = Dir('#src/modules').abspath
+timing_env = env.Clone(BUILDERS={})
+timing_env.Tool('cc')
+timing_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+timing_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    timing_env.Tool('compilation_db')
 
-timing_group = DefineGroup(
-    'Timing',
-    ['timestamp_extender.c'],
-    depend=[''],
-    CPPPATH=[module_root],
-    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
+timing_objects = timing_env.Object(
+    target='#build/firmware/modules/timing/timestamp_extender',
+    source='timestamp_extender.c',
 )
 
-Return('timing_group')
+Return('timing_objects')

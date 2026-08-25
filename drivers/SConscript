@@ -2,12 +2,13 @@ from building import *
 
 cwd = GetCurrentDir()
 root = Dir('#').abspath
+module_root = Dir('#src/modules').abspath
 
 driver_group = DefineGroup(
     'BMI088',
     ['bmi088.c', 'bmi088_port.c'],
     depend=[''],
-    CPPPATH=[cwd, root],
+    CPPPATH=[cwd, root, module_root],
     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
 )
 
