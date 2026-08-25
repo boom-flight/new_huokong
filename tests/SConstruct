@@ -23,12 +23,22 @@ def host_test(name, sources, include_paths):
     )
 
 
-include_paths = ['.', 'algorithm', 'drivers', 'applications', 'protocol']
+include_paths = [
+    '.',
+    'algorithm',
+    'drivers',
+    'applications',
+    'protocol',
+]
+module_include_paths = ['src/modules']
 
 test_timestamp_extender = host_test(
     'test_timestamp_extender',
-    ['tests/test_timestamp_extender.c', 'drivers/timestamp_extender.c'],
-    include_paths,
+    [
+        'tests/modules/timing/test_timestamp_extender.c',
+        'src/modules/timing/timestamp_extender.c',
+    ],
+    module_include_paths,
 )
 Alias('test_timestamp_extender', test_timestamp_extender)
 
@@ -72,9 +82,12 @@ test_imu_service_logic = host_test(
 )
 Alias('test_imu_service_logic', test_imu_service_logic)
 
-test_telemetry_dma_state = host_test(
-    'test_telemetry_dma_state',
-    ['tests/test_telemetry_dma_state.c', 'drivers/telemetry_dma_state.c'],
-    include_paths,
+test_dma_tx_state = host_test(
+    'test_dma_tx_state',
+    [
+        'tests/modules/transport/test_dma_tx_state.c',
+        'src/modules/transport/dma_tx_state.c',
+    ],
+    module_include_paths,
 )
-Alias('test_telemetry_dma_state', test_telemetry_dma_state)
+Alias('test_dma_tx_state', test_dma_tx_state)

@@ -1,8 +1,8 @@
 #include "bmi088_port.h"
 
 #include "main.h"
-#include "telemetry_dma_state.h"
-#include "timestamp_extender.h"
+#include "timing/timestamp_extender.h"
+#include "transport/dma_tx_state.h"
 
 #include <rtthread.h>
 
@@ -20,7 +20,7 @@ static struct rt_event *imu_event;
 static volatile bmi088_drdy_latch_t accel_latch;
 static volatile bmi088_drdy_latch_t gyro_latch;
 static volatile uint16_t timestamp_high_word;
-static telemetry_dma_state_t telemetry_dma_state;
+static dma_tx_state_t telemetry_dma_state;
 static bool port_initialized;
 
 static void cleanup_port(void)
@@ -59,7 +59,7 @@ static void cleanup_port(void)
     accel_latch = (bmi088_drdy_latch_t){0};
     gyro_latch = (bmi088_drdy_latch_t){0};
     timestamp_high_word = 0u;
-    telemetry_dma_state_reset(&telemetry_dma_state);
+    dma_tx_state_reset(&telemetry_dma_state);
     imu_event = NULL;
     hspi1 = (SPI_HandleTypeDef){0};
     htim2 = (TIM_HandleTypeDef){0};
@@ -270,7 +270,7 @@ bool bmi088_port_init(struct rt_event *event)
     accel_latch = (bmi088_drdy_latch_t){0};
     gyro_latch = (bmi088_drdy_latch_t){0};
     timestamp_high_word = 0u;
-    telemetry_dma_state_reset(&telemetry_dma_state);
+    dma_tx_state_reset(&telemetry_dma_state);
     success = init_spi_gpio() && init_timestamp_timer() &&
               init_telemetry_uart();
     if (success) {
@@ -353,7 +353,7 @@ bool bmi088_port_telemetry_try_start(const uint8_t *frame, size_t length)
     level = rt_hw_interrupt_disable();
     if (!port_initialized || huart2.Instance != USART2 ||
         hdma_usart2_tx.Instance != DMA1_Channel7 ||
-        !telemetry_dma_state_reserve(&telemetry_dma_state)) {
+        !dma_tx_state_reserve(&telemetry_dma_state)) {
         rt_hw_interrupt_enable(level);
         return false;
     }
@@ -362,7 +362,7 @@ bool bmi088_port_telemetry_try_start(const uint8_t *frame, size_t length)
     if (HAL_UART_Transmit_DMA(&huart2, (uint8_t *)frame,
                               (uint16_t)length) != HAL_OK) {
         level = rt_hw_interrupt_disable();
-        telemetry_dma_state_cancel(&telemetry_dma_state);
+        dma_tx_state_cancel(&telemetry_dma_state);
         rt_hw_interrupt_enable(level);
         return false;
     }
@@ -373,7 +373,7 @@ bool bmi088_port_telemetry_busy(void)
 {
     bool busy;
     const rt_base_t level = rt_hw_interrupt_disable();
-    busy = port_initialized && telemetry_dma_state_busy(&telemetry_dma_state);
+    busy = port_initialized && dma_tx_state_busy(&telemetry_dma_state);
     rt_hw_interrupt_enable(level);
     return busy;
 }
@@ -384,7 +384,7 @@ bool bmi088_port_telemetry_take_failure(void)
     const rt_base_t level = rt_hw_interrupt_disable();
 
     failed = port_initialized &&
-             telemetry_dma_state_take_failure(&telemetry_dma_state);
+             dma_tx_state_take_failure(&telemetry_dma_state);
     rt_hw_interrupt_enable(level);
     return failed;
 }
@@ -451,7 +451,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     const rt_base_t level = rt_hw_interrupt_disable();
 
     if (port_initialized && huart != NULL && huart->Instance == USART2) {
-        telemetry_dma_state_complete(&telemetry_dma_state);
+        dma_tx_state_complete(&telemetry_dma_state);
     }
     rt_hw_interrupt_enable(level);
 }
@@ -461,7 +461,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     const rt_base_t level = rt_hw_interrupt_disable();
 
     if (port_initialized && huart != NULL && huart->Instance == USART2) {
-        telemetry_dma_state_async_error(&telemetry_dma_state);
+        dma_tx_state_async_error(&telemetry_dma_state);
     }
     rt_hw_interrupt_enable(level);
 }

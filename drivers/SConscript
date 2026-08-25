@@ -5,8 +5,7 @@ root = Dir('#').abspath
 
 driver_group = DefineGroup(
     'BMI088',
-    ['bmi088.c', 'bmi088_port.c', 'telemetry_dma_state.c',
-     'timestamp_extender.c'],
+    ['bmi088.c', 'bmi088_port.c'],
     depend=[''],
     CPPPATH=[cwd, root],
     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',

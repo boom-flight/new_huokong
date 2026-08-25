@@ -7,6 +7,8 @@ scripts = [
     'algorithm/SConscript',
     'applications/SConscript',
     'board/SConscript',
+    'src/modules/timing/SConscript',
+    'src/modules/transport/SConscript',
     'drivers/SConscript',
     'packages/SConscript',
     'protocol/SConscript',

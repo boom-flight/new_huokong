@@ -1,4 +1,4 @@
-#include "timestamp_extender.h"
+#include "timing/timestamp_extender.h"
 
 uint32_t timestamp_extender_compose(uint16_t high_word, uint16_t counter,
                                     bool update_pending)

@@ -1,0 +1,13 @@
+from building import *
+
+module_root = Dir('#src/modules').abspath
+
+transport_group = DefineGroup(
+    'Transport',
+    ['dma_tx_state.c'],
+    depend=[''],
+    CPPPATH=[module_root],
+    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
+)
+
+Return('transport_group')
