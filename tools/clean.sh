@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Remove STM32F103C8 build outputs.
+# 清理 STM32F103C8 构建产物。
 source "$(dirname "$0")/env.sh"
 scons -c

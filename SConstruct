@@ -21,7 +21,12 @@ def bsp_pkg_check():
 
 RegisterPreBuildingAction(bsp_pkg_check)
 
-TARGET = 'rt-thread.' + rtconfig.TARGET_EXT
+FIRMWARE_DIR = os.path.join('build', 'firmware')
+TARGET = os.path.join('build', 'firmware', 'huokong.' + rtconfig.TARGET_EXT)
+BIN_TARGET = os.path.join(FIRMWARE_DIR, 'huokong.bin')
+MAP_TARGET = os.path.join(FIRMWARE_DIR, 'huokong.map')
+
+SConsignFile('build/scons/firmware.dblite')
 DefaultEnvironment(tools=[])
 env = Environment(
     tools=['mingw'],
@@ -35,6 +40,7 @@ env = Environment(
     CXXFLAGS=rtconfig.CXXFLAGS,
     LINK=rtconfig.LINK,
     LINKFLAGS=rtconfig.LFLAGS,
+    OBJCOPY=rtconfig.OBJCPY,
 )
 env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
 env.AppendUnique(CPPPATH=['algorithm', 'drivers', 'protocol'])
@@ -58,3 +64,9 @@ objs.extend(DefineGroup('Direct HAL', direct_hal, depend=[''],
     CPPDEFINES=['USE_HAL_DRIVER']))
 
 DoBuilding(TARGET, objs)
+program = env['target']
+binary = env.Command(BIN_TARGET, program,
+                     '$OBJCOPY -O binary $SOURCE $TARGET')
+env.SideEffect(MAP_TARGET, program)
+env.Clean(program, [BIN_TARGET, MAP_TARGET])
+Default(program, binary)

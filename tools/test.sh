@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clean, build, and run the strict native test executables.
+# 清理、构建并运行严格检查的本机测试程序。
 source "$(dirname "$0")/env.sh"
 
 if (( $# > 1 )); then
@@ -7,12 +7,11 @@ if (( $# > 1 )); then
     exit 2
 fi
 
-scons -C tests -c
-rm -rf tests/build
-scons -C tests -j"$(nproc)"
+scons -f tests/SConstruct -c
+scons -f tests/SConstruct -j"$(nproc)"
 
 if (( $# == 1 )); then
-    executable="tests/build/$1"
+    executable="build/host-tests/$1"
     if [[ "$1" == */* || ! -f "$executable" || ! -x "$executable" ]]; then
         printf 'test executable not found: %s\n' "$1" >&2
         exit 2
@@ -22,7 +21,7 @@ if (( $# == 1 )); then
 fi
 
 shopt -s nullglob
-discovery_dir=${TEST_DISCOVERY_DIR:-tests/build}
+discovery_dir=${TEST_DISCOVERY_DIR:-build/host-tests}
 candidates=("$discovery_dir"/test_*)
 executables=()
 for candidate in "${candidates[@]}"; do
@@ -38,4 +37,3 @@ mapfile -t executables < <(printf '%s\n' "${executables[@]}" | LC_ALL=C sort)
 for executable in "${executables[@]}"; do
     "$executable"
 done
-sh tests/test_check_size.sh

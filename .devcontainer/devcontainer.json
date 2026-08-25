@@ -3,7 +3,7 @@
     "dockerComposeFile": ["docker-compose.yml"],
     "service": "develop",
     "workspaceFolder": "/workspaces/new_huokong",
-    "postCreateCommand": "bash .script/setup-ubuntu.sh",
+    "postCreateCommand": "bash tools/setup-ubuntu.sh",
     "containerEnv": { "RTT_EXEC_PATH": "/usr/bin", "RTT_CC": "gcc" },
     "customizations": {
         "vscode": {

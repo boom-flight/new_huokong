@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared GCC environment for all project scripts.
+# 所有项目脚本共用的 GCC 环境。
 set -euo pipefail
 export PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export RTT_EXEC_PATH=/usr/bin

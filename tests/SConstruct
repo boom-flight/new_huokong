@@ -1,49 +1,80 @@
-env = Environment(
+import os
+
+
+SConsignFile(os.path.join(os.getcwd(), 'build', 'scons', 'host-tests.dblite'))
+
+base = Environment(
     CC='cc',
     CFLAGS=['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-pedantic'],
-    CPPPATH=['..', '../algorithm', '../drivers', '../applications', '../protocol'],
     LIBS=['m'],
 )
 
-test_timestamp_extender = env.Program(
-    target='build/test_timestamp_extender',
-    source=['test_timestamp_extender.c', '../drivers/timestamp_extender.c'],
+
+def host_test(name, sources, include_paths):
+    test_env = base.Clone()
+    test_env.AppendUnique(CPPPATH=include_paths)
+    objects = []
+    for index, source in enumerate(sources):
+        target = 'build/host-tests/obj/{}/{}'.format(name, index)
+        objects.append(test_env.Object(target=target, source=source))
+    return test_env.Program(
+        target='build/host-tests/' + name,
+        source=objects,
+    )
+
+
+include_paths = ['.', 'algorithm', 'drivers', 'applications', 'protocol']
+
+test_timestamp_extender = host_test(
+    'test_timestamp_extender',
+    ['tests/test_timestamp_extender.c', 'drivers/timestamp_extender.c'],
+    include_paths,
 )
 Alias('test_timestamp_extender', test_timestamp_extender)
 
-test_bmi088 = env.Program(
-    target='build/test_bmi088',
-    source=['test_bmi088.c', 'fake_bmi088_bus.c', '../drivers/bmi088.c'],
+test_bmi088 = host_test(
+    'test_bmi088',
+    ['tests/test_bmi088.c', 'tests/fake_bmi088_bus.c', 'drivers/bmi088.c'],
+    include_paths,
 )
 Alias('test_bmi088', test_bmi088)
 
-test_imu_telemetry = env.Program(
-    target='build/test_imu_telemetry',
-    source=['test_imu_telemetry.c', '../protocol/imu_telemetry.c'],
+test_imu_telemetry = host_test(
+    'test_imu_telemetry',
+    ['tests/test_imu_telemetry.c', 'protocol/imu_telemetry.c'],
+    include_paths,
 )
 Alias('test_imu_telemetry', test_imu_telemetry)
 
-test_mahony = env.Program(
-    target='build/test_mahony',
-    source=['test_mahony.c', '../algorithm/mahony.c'],
+test_mahony = host_test(
+    'test_mahony',
+    ['tests/test_mahony.c', 'algorithm/mahony.c'],
+    include_paths,
 )
 Alias('test_mahony', test_mahony)
 
-test_imu_calibration = env.Program(
-    target='build/test_imu_calibration',
-    source=['test_imu_calibration.c', '../algorithm/imu_calibration.c'],
+test_imu_calibration = host_test(
+    'test_imu_calibration',
+    ['tests/test_imu_calibration.c', 'algorithm/imu_calibration.c'],
+    include_paths,
 )
 Alias('test_imu_calibration', test_imu_calibration)
 
-test_imu_service_logic = env.Program(
-    target='build/test_imu_service_logic',
-    source=['test_imu_service_logic.c', '../applications/imu_service_logic.c',
-            '../algorithm/imu_calibration.c', '../algorithm/mahony.c'],
+test_imu_service_logic = host_test(
+    'test_imu_service_logic',
+    [
+        'tests/test_imu_service_logic.c',
+        'applications/imu_service_logic.c',
+        'algorithm/imu_calibration.c',
+        'algorithm/mahony.c',
+    ],
+    include_paths,
 )
 Alias('test_imu_service_logic', test_imu_service_logic)
 
-test_telemetry_dma_state = env.Program(
-    target='build/test_telemetry_dma_state',
-    source=['test_telemetry_dma_state.c', '../drivers/telemetry_dma_state.c'],
+test_telemetry_dma_state = host_test(
+    'test_telemetry_dma_state',
+    ['tests/test_telemetry_dma_state.c', 'drivers/telemetry_dma_state.c'],
+    include_paths,
 )
 Alias('test_telemetry_dma_state', test_telemetry_dma_state)

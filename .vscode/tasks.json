@@ -8,52 +8,52 @@
         {
             "label": "firmware build + size",
             "type": "shell",
-            "command": ".script/build.sh",
+            "command": "tools/build.sh",
             "group": { "kind": "build", "isDefault": true },
             "problemMatcher": "$gcc"
         },
         {
             "label": "rebuild clangd index",
             "type": "shell",
-            "command": ".script/rebuild-index.sh",
+            "command": "tools/rebuild-index.sh",
             "problemMatcher": "$gcc"
         },
         {
             "label": "clean",
             "type": "shell",
-            "command": ".script/clean.sh",
+            "command": "tools/clean.sh",
             "problemMatcher": []
         },
         {
             "label": "host tests",
             "type": "shell",
-            "command": ".script/test.sh",
+            "command": "tools/test.sh",
             "group": { "kind": "test", "isDefault": true },
             "problemMatcher": "$gcc"
         },
         {
             "label": "flash STM32F103",
             "type": "shell",
-            "command": ".script/flash.sh",
+            "command": "tools/flash.sh",
             "problemMatcher": []
         },
         {
             "label": "debug STM32F103",
             "type": "shell",
-            "command": ".script/gdb.sh",
+            "command": "tools/debug.sh",
             "dependsOn": "firmware build + size",
             "problemMatcher": []
         },
         {
             "label": "menuconfig",
             "type": "shell",
-            "command": ".script/menuconfig.sh",
+            "command": "tools/menuconfig.sh",
             "problemMatcher": []
         },
         {
             "label": "USART1 console",
             "type": "shell",
-            "command": ".script/console.sh",
+            "command": "tools/console.sh",
             "isBackground": true,
             "problemMatcher": []
         }

@@ -1,3 +1,5 @@
+CompilationDatabase: build
+
 CompileFlags:
   Add: [--target=arm-none-eabi]
   Compiler: /usr/bin/arm-none-eabi-gcc

@@ -1,12 +1,16 @@
-# for module compiling
-import os
 Import('RTT_ROOT')
 Import('env')
 from building import *
 
-cwd = GetCurrentDir()
 objs = []
-list = os.listdir(cwd)
+scripts = [
+    'algorithm/SConscript',
+    'applications/SConscript',
+    'board/SConscript',
+    'drivers/SConscript',
+    'packages/SConscript',
+    'protocol/SConscript',
+]
 
 # STM32F100xB || STM32F100xE || STM32F101x6
 # STM32F101xB || STM32F101xE || STM32F101xG
@@ -14,11 +18,9 @@ list = os.listdir(cwd)
 # STM32F103xB || STM32F103xE || STM32F103xG
 # STM32F105xC || STM32F107xC)
 # You can select chips from the list above
-env.Append(CPPDEFINES = ['STM32F103xB'])
+env.Append(CPPDEFINES=['STM32F103xB'])
 
-for d in list:
-    path = os.path.join(cwd, d)
-    if os.path.isfile(os.path.join(path, 'SConscript')):
-        objs = objs + SConscript(os.path.join(d, 'SConscript'))
+for script in scripts:
+    objs.extend(SConscript(script))
 
 Return('objs')

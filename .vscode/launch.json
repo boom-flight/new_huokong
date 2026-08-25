@@ -6,7 +6,7 @@
             "type": "cortex-debug",
             "request": "launch",
             "servertype": "openocd",
-            "executable": "${workspaceFolder}/rt-thread.elf",
+            "executable": "${workspaceFolder}/build/firmware/huokong.elf",
             "configFiles": ["interface/stlink.cfg", "target/stm32f1x.cfg"],
             "device": "STM32F103C8",
             "svdFile": "${workspaceFolder}/.vscode/STM32F103xx.svd",
@@ -19,7 +19,7 @@
             "type": "cortex-debug",
             "request": "attach",
             "servertype": "openocd",
-            "executable": "${workspaceFolder}/rt-thread.elf",
+            "executable": "${workspaceFolder}/build/firmware/huokong.elf",
             "configFiles": ["interface/stlink.cfg", "target/stm32f1x.cfg"],
             "device": "STM32F103C8",
             "svdFile": "${workspaceFolder}/.vscode/STM32F103xx.svd"

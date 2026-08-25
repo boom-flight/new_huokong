@@ -4,4 +4,4 @@ set -euo pipefail
 cd "$(dirname "$0")/../.devcontainer"
 docker compose up -d develop
 docker compose exec develop bash -c \
-    'command -v arm-none-eabi-gcc >/dev/null || bash .script/setup-ubuntu.sh; exec zsh'
+    'command -v arm-none-eabi-gcc >/dev/null || bash tools/setup-ubuntu.sh; exec zsh'
