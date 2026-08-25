@@ -1,13 +1,9 @@
-#ifndef IMU_SERVICE_H
-#define IMU_SERVICE_H
+#ifndef IMU_SNAPSHOT_H
+#define IMU_SNAPSHOT_H
 
 #include "attitude/imu_types.h"
 
-#include <stdbool.h>
 #include <stdint.h>
-
-#define IMU_THREAD_PRIORITY 5u
-#define IMU_THREAD_STACK_SIZE 768u
 
 enum {
     IMU_STATUS_VALID = 1u << 0,
@@ -20,13 +16,6 @@ enum {
     IMU_STATUS_EVENT_OVERRUN = 1u << 7,
     IMU_STATUS_TELEMETRY_DROPPED = 1u << 8
 };
-
-typedef enum {
-    IMU_INITIALIZING,
-    IMU_CALIBRATING,
-    IMU_RUNNING,
-    IMU_FAULT_RETRY
-} imu_state_t;
 
 typedef struct {
     uint32_t accel_samples;
@@ -49,9 +38,5 @@ typedef struct {
     imu_vec3f_t accel_g;
     imu_diagnostics_t diagnostics;
 } imu_snapshot_t;
-
-bool imu_service_init(void);
-bool imu_snapshot_read(imu_snapshot_t *out);
-void imu_service_record_telemetry_drop(void);
 
 #endif

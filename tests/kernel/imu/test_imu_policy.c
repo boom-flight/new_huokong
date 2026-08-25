@@ -1,7 +1,4 @@
-#include "imu_service_logic.h"
-#include "imu_service.h"
-#include "attitude/imu_calibration.h"
-#include "attitude/mahony.h"
+#include "imu/imu_policy.h"
 
 #include <assert.h>
 #include <math.h>
@@ -281,40 +278,6 @@ static void test_fault_led_has_two_pulses_within_one_second(void)
     assert(!step.on && step.duration_ms == 700u && step.next_phase == 0u);
 }
 
-static void test_attempt_sequence_advances_while_drop_stays_sticky_until_queue(void)
-{
-    telemetry_attempt_state_t state = {0};
-
-    assert(telemetry_attempt_begin(&state) == 0u);
-    telemetry_attempt_dropped(&state);
-    assert(state.next_sequence == 1u);
-    assert(state.drops == 1u);
-    assert(state.drop_sticky);
-
-    assert(telemetry_attempt_begin(&state) == 1u);
-    assert(state.drop_sticky);
-    telemetry_attempt_dropped(&state);
-    assert(state.next_sequence == 2u);
-    assert(state.drops == 2u);
-    assert(state.drop_sticky);
-
-    assert(telemetry_attempt_begin(&state) == 2u);
-    assert(state.drop_sticky);
-    telemetry_attempt_queued(&state);
-    assert(state.next_sequence == 3u);
-    assert(state.drops == 2u);
-    assert(!state.drop_sticky);
-}
-
-static void test_attempt_sequence_wraps_after_uint16_max(void)
-{
-    telemetry_attempt_state_t state = {.next_sequence = UINT16_MAX};
-
-    assert(telemetry_attempt_begin(&state) == UINT16_MAX);
-    telemetry_attempt_queued(&state);
-    assert(state.next_sequence == 0u);
-}
-
 static void test_housekeeping_wait_is_zero_at_or_after_a_deadline(void)
 {
     assert(imu_housekeeping_wait_ticks(100u, 100u, 200u) == 0u);
@@ -555,8 +518,6 @@ int main(void)
     test_status_composition_preserves_both_source_conditions();
     test_led_phases_encode_each_state_pattern();
     test_fault_led_has_two_pulses_within_one_second();
-    test_attempt_sequence_advances_while_drop_stays_sticky_until_queue();
-    test_attempt_sequence_wraps_after_uint16_max();
     test_housekeeping_wait_is_zero_at_or_after_a_deadline();
     test_housekeeping_wait_uses_the_nearest_future_deadline();
     test_housekeeping_wait_handles_tick_wrap();

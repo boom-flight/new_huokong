@@ -2,8 +2,8 @@
 #include <drv_gpio.h>
 #include <rtthread.h>
 
-#include "imu_service.h"
-#include "telemetry_service.h"
+#include "imu/imu_service.h"
+#include "telemetry/telemetry_service.h"
 
 #define STATE_LED_PIN GET_PIN(B, 6)
 

@@ -1,13 +1,20 @@
-#ifndef IMU_SERVICE_LOGIC_H
-#define IMU_SERVICE_LOGIC_H
+#ifndef IMU_POLICY_H
+#define IMU_POLICY_H
 
-#include "imu_service.h"
 #include "attitude/imu_calibration.h"
 #include "attitude/mahony.h"
 #include "bmi088/bmi088.h"
+#include "imu/imu_snapshot.h"
 
 #include <stdbool.h>
 #include <stdint.h>
+
+typedef enum {
+    IMU_INITIALIZING,
+    IMU_CALIBRATING,
+    IMU_RUNNING,
+    IMU_FAULT_RETRY
+} imu_state_t;
 
 typedef enum {
     IMU_DT_INTEGRATE,
@@ -26,12 +33,6 @@ typedef enum {
     IMU_CALIBRATION_ADMISSION_SKIP_PENDING_ACCEL,
     IMU_CALIBRATION_ADMISSION_RESET,
 } imu_calibration_admission_t;
-
-typedef struct {
-    uint16_t next_sequence;
-    uint32_t drops;
-    bool drop_sticky;
-} telemetry_attempt_state_t;
 
 typedef struct {
     uint16_t duration_ms;
@@ -98,8 +99,5 @@ imu_led_step_t imu_led_step(imu_state_t state, uint8_t phase);
 uint32_t imu_housekeeping_wait_ticks(uint32_t now,
                                      uint32_t led_deadline,
                                      uint32_t diagnostics_deadline);
-uint16_t telemetry_attempt_begin(telemetry_attempt_state_t *state);
-void telemetry_attempt_dropped(telemetry_attempt_state_t *state);
-void telemetry_attempt_queued(telemetry_attempt_state_t *state);
 
 #endif

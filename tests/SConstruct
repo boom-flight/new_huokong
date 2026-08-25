@@ -23,17 +23,11 @@ def host_test(name, sources, include_paths):
     )
 
 
-include_paths = [
-    '.',
-    'drivers',
-    'applications',
-    'src/modules',
-    'src/modules/devices',
-]
 module_include_paths = ['src/modules']
 protocol_include_paths = ['src/modules/protocols'] + module_include_paths
 device_include_paths = ['src/modules/devices'] + module_include_paths
 bmi088_test_include_paths = ['tests/fakes'] + device_include_paths
+imu_policy_include_paths = ['src/kernel'] + device_include_paths
 
 test_timestamp_extender = host_test(
     'test_timestamp_extender',
@@ -86,17 +80,27 @@ test_imu_calibration = host_test(
 )
 Alias('test_imu_calibration', test_imu_calibration)
 
-test_imu_service_logic = host_test(
-    'test_imu_service_logic',
+test_imu_policy = host_test(
+    'test_imu_policy',
     [
-        'tests/test_imu_service_logic.c',
-        'applications/imu_service_logic.c',
+        'tests/kernel/imu/test_imu_policy.c',
+        'src/kernel/imu/imu_policy.c',
         'src/modules/attitude/imu_calibration.c',
         'src/modules/attitude/mahony.c',
     ],
-    include_paths,
+    imu_policy_include_paths,
 )
-Alias('test_imu_service_logic', test_imu_service_logic)
+Alias('test_imu_policy', test_imu_policy)
+
+test_telemetry_policy = host_test(
+    'test_telemetry_policy',
+    [
+        'tests/kernel/telemetry/test_telemetry_policy.c',
+        'src/kernel/telemetry/telemetry_policy.c',
+    ],
+    ['src/kernel'],
+)
+Alias('test_telemetry_policy', test_telemetry_policy)
 
 test_dma_tx_state = host_test(
     'test_dma_tx_state',

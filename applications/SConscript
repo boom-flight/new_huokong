@@ -1,14 +1,11 @@
 from building import *
 
 cwd = GetCurrentDir()
-module_root = Dir('#src/modules').abspath
-device_root = Dir('#src/modules/devices').abspath
-protocol_root = Dir('#src/modules/protocols').abspath
-src = Glob('*.c')
+kernel_root = Dir('#src/kernel').abspath
+src = ['main.c']
 
 group = DefineGroup('Applications', src, depend=[''],
-                    CPPPATH=[cwd, module_root, protocol_root],
-                    LOCAL_CPPPATH=[device_root],
+                    CPPPATH=[cwd, kernel_root],
                     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror')
 
 Return('group')

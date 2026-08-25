@@ -1,10 +1,10 @@
-#include "imu_service.h"
+#include "imu/imu_service.h"
 
 #include "attitude/imu_calibration.h"
 #include "attitude/mahony.h"
 #include "bmi088/bmi088.h"
 #include "drivers/bmi088_port.h"
-#include "imu_service_logic.h"
+#include "imu/imu_policy.h"
 
 #include <board.h>
 #include <drv_gpio.h>
@@ -14,6 +14,8 @@
 #include <stdint.h>
 
 #define DEG_TO_RAD 0.01745329251994329577f
+#define IMU_THREAD_PRIORITY 5u
+#define IMU_THREAD_STACK_SIZE 768u
 #define STATE_LED_PIN GET_PIN(B, 6)
 
 typedef struct {

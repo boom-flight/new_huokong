@@ -1,9 +1,10 @@
-#include "telemetry_service.h"
+#include "telemetry/telemetry_service.h"
 
 #include "drivers/bmi088_port.h"
-#include "imu_service.h"
-#include "imu_service_logic.h"
+#include "imu/imu_service.h"
+#include "imu/imu_snapshot.h"
 #include "imu_telemetry/imu_telemetry.h"
+#include "telemetry/telemetry_policy.h"
 
 #include <rtthread.h>
 
