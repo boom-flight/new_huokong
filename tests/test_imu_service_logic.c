@@ -1,7 +1,7 @@
 #include "imu_service_logic.h"
 #include "imu_service.h"
-#include "imu_calibration.h"
-#include "mahony.h"
+#include "attitude/imu_calibration.h"
+#include "attitude/mahony.h"
 
 #include <assert.h>
 #include <math.h>

@@ -4,14 +4,14 @@ from building import *
 
 objs = []
 scripts = [
-    'algorithm/SConscript',
+    'src/modules/attitude/SConscript',
+    'src/modules/protocols/imu_telemetry/SConscript',
     'applications/SConscript',
     'board/SConscript',
     'src/modules/timing/SConscript',
     'src/modules/transport/SConscript',
     'drivers/SConscript',
     'packages/SConscript',
-    'protocol/SConscript',
 ]
 
 # STM32F100xB || STM32F100xE || STM32F101x6

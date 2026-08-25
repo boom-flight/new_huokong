@@ -1,7 +1,7 @@
 #ifndef BMI088_H
 #define BMI088_H
 
-#include "include/imu_types.h"
+#include "attitude/imu_types.h"
 
 #include <stdbool.h>
 #include <stddef.h>

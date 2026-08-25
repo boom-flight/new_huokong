@@ -1,0 +1,23 @@
+Import('env')
+from building import DefineGroup
+
+module_root = Dir('#src/modules').abspath
+attitude_env = env.Clone(BUILDERS={})
+attitude_env.Tool('cc')
+attitude_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+attitude_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    attitude_env.Tool('compilation_db')
+
+attitude_objects = []
+attitude_objects.extend(attitude_env.Object(
+    target='#build/firmware/modules/attitude/mahony',
+    source='mahony.c',
+))
+attitude_objects.extend(attitude_env.Object(
+    target='#build/firmware/modules/attitude/imu_calibration',
+    source='imu_calibration.c',
+))
+attitude_group = DefineGroup('Attitude', attitude_objects, depend=[''])
+
+Return('attitude_group')

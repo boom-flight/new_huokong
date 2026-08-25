@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "imu_telemetry.h"
+#include "imu_telemetry/imu_telemetry.h"
 #include "test_common.h"
 
 static void test_crc_matches_standard_check_vector(void)

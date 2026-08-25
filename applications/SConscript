@@ -1,9 +1,12 @@
 from building import *
 
 cwd = GetCurrentDir()
+module_root = Dir('#src/modules').abspath
+protocol_root = Dir('#src/modules/protocols').abspath
 src = Glob('*.c')
 
-group = DefineGroup('Applications', src, depend=[''], CPPPATH=[cwd],
+group = DefineGroup('Applications', src, depend=[''],
+                    CPPPATH=[cwd, module_root, protocol_root],
                     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror')
 
 Return('group')

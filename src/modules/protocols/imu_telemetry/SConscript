@@ -1,0 +1,18 @@
+Import('env')
+from building import DefineGroup
+
+module_root = Dir('#src/modules').abspath
+telemetry_env = env.Clone(BUILDERS={})
+telemetry_env.Tool('cc')
+telemetry_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+telemetry_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    telemetry_env.Tool('compilation_db')
+
+telemetry_objects = telemetry_env.Object(
+    target='#build/firmware/modules/imu_telemetry/imu_telemetry',
+    source='imu_telemetry.c',
+)
+telemetry_group = DefineGroup('IMU Telemetry', telemetry_objects, depend=[''])
+
+Return('telemetry_group')

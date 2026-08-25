@@ -25,12 +25,12 @@ def host_test(name, sources, include_paths):
 
 include_paths = [
     '.',
-    'algorithm',
     'drivers',
     'applications',
-    'protocol',
+    'src/modules',
 ]
 module_include_paths = ['src/modules']
+protocol_include_paths = ['src/modules/protocols'] + module_include_paths
 
 test_timestamp_extender = host_test(
     'test_timestamp_extender',
@@ -51,22 +51,31 @@ Alias('test_bmi088', test_bmi088)
 
 test_imu_telemetry = host_test(
     'test_imu_telemetry',
-    ['tests/test_imu_telemetry.c', 'protocol/imu_telemetry.c'],
-    include_paths,
+    [
+        'tests/modules/protocols/imu_telemetry/test_imu_telemetry.c',
+        'src/modules/protocols/imu_telemetry/imu_telemetry.c',
+    ],
+    protocol_include_paths,
 )
 Alias('test_imu_telemetry', test_imu_telemetry)
 
 test_mahony = host_test(
     'test_mahony',
-    ['tests/test_mahony.c', 'algorithm/mahony.c'],
-    include_paths,
+    [
+        'tests/modules/attitude/test_mahony.c',
+        'src/modules/attitude/mahony.c',
+    ],
+    module_include_paths,
 )
 Alias('test_mahony', test_mahony)
 
 test_imu_calibration = host_test(
     'test_imu_calibration',
-    ['tests/test_imu_calibration.c', 'algorithm/imu_calibration.c'],
-    include_paths,
+    [
+        'tests/modules/attitude/test_imu_calibration.c',
+        'src/modules/attitude/imu_calibration.c',
+    ],
+    module_include_paths,
 )
 Alias('test_imu_calibration', test_imu_calibration)
 
@@ -75,8 +84,8 @@ test_imu_service_logic = host_test(
     [
         'tests/test_imu_service_logic.c',
         'applications/imu_service_logic.c',
-        'algorithm/imu_calibration.c',
-        'algorithm/mahony.c',
+        'src/modules/attitude/imu_calibration.c',
+        'src/modules/attitude/mahony.c',
     ],
     include_paths,
 )

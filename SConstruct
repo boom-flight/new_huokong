@@ -52,7 +52,7 @@ env = Environment(
     OBJCOPY=rtconfig.OBJCPY,
 )
 env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
-env.AppendUnique(CPPPATH=['algorithm', 'drivers', 'protocol'])
+env.AppendUnique(CPPPATH=['drivers'])
 env.AppendUnique(LIBS=['m'])
 object_builder = env['BUILDERS']['StaticObject']
 for suffix, emitter in object_builder.emitter.items():

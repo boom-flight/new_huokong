@@ -4,7 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "mahony.h"
+#include "attitude/mahony.h"
+
+_Static_assert(sizeof(imu_vec3f_t) == 3u * sizeof(float),
+               "imu_vec3f_t layout changed");
+_Static_assert(sizeof(imu_quatf_t) == 4u * sizeof(float),
+               "imu_quatf_t layout changed");
 
 static void assert_close(float actual, float expected, float tolerance)
 {

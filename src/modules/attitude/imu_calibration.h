@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "include/imu_types.h"
+#include "attitude/imu_types.h"
 
 #define IMU_CALIBRATION_SAMPLE_COUNT 2000u
 

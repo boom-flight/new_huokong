@@ -3,7 +3,7 @@
 #include "drivers/bmi088_port.h"
 #include "imu_service.h"
 #include "imu_service_logic.h"
-#include "protocol/imu_telemetry.h"
+#include "imu_telemetry/imu_telemetry.h"
 
 #include <rtthread.h>
 

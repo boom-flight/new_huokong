@@ -1,4 +1,4 @@
-#include "imu_calibration.h"
+#include "attitude/imu_calibration.h"
 
 #include <math.h>
 

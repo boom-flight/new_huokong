@@ -1,4 +1,4 @@
-#include "mahony.h"
+#include "attitude/mahony.h"
 
 #include <math.h>
 #include <stddef.h>

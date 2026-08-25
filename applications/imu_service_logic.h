@@ -2,8 +2,8 @@
 #define IMU_SERVICE_LOGIC_H
 
 #include "imu_service.h"
-#include "algorithm/imu_calibration.h"
-#include "algorithm/mahony.h"
+#include "attitude/imu_calibration.h"
+#include "attitude/mahony.h"
 #include "drivers/bmi088.h"
 
 #include <stdbool.h>

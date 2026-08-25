@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "imu_calibration.h"
+#include "attitude/imu_calibration.h"
 
 static void assert_close(float actual, float expected)
 {

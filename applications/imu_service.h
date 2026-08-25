@@ -1,7 +1,7 @@
 #ifndef IMU_SERVICE_H
 #define IMU_SERVICE_H
 
-#include "include/imu_types.h"
+#include "attitude/imu_types.h"
 
 #include <stdbool.h>
 #include <stdint.h>

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "include/imu_types.h"
+#include "attitude/imu_types.h"
 
 typedef struct {
     imu_quatf_t q;
