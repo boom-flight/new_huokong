@@ -6,7 +6,7 @@ module_root = Dir('#src/modules').abspath
 device_root = Dir('#src/modules/devices').abspath
 hardware_paths = [
     Dir('#').abspath,
-    Dir('#board/CubeMX_Config/Inc').abspath,
+    Dir('#src/platform/board/stm32f103c8/CubeMX_Config/Inc').abspath,
     Dir('#packages/CMSIS-Core-latest/Include').abspath,
     Dir('#packages/stm32f1_cmsis_driver-latest/Include').abspath,
     Dir('#packages/stm32f1_hal_driver-latest/Inc').abspath,

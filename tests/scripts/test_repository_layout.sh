@@ -12,6 +12,36 @@ grep -q "TARGET = os.path.join('build', 'firmware', 'huokong.'" SConstruct \
 grep -q 'SConsignFile' SConstruct || fail 'firmware SCons database is not redirected'
 grep -q 'build/firmware/huokong.map' rtconfig.py || fail 'map path is not centralized'
 
+test ! -d board || fail 'old board/ directory still exists'
+test ! -d applications || fail 'old applications/ directory still exists'
+test ! -e libraries/Kconfig || fail 'old libraries/Kconfig still exists'
+
+test -f src/app/main.c || fail 'missing src/app/main.c'
+test -f src/app/SConscript || fail 'missing src/app/SConscript'
+board_root=src/platform/board/stm32f103c8
+test -f "$board_root/SConscript" || fail 'missing board SConscript'
+test -f "$board_root/Kconfig" || fail 'missing board Kconfig'
+test -f "$board_root/soc/Kconfig" || fail 'missing board SoC Kconfig'
+test -f "$board_root/linker_scripts/link.lds" || fail 'missing board linker script'
+
+grep -Fq "'$board_root/SConscript'" SConscript \
+    || fail 'root SConscript does not include the board manifest'
+grep -Fq "'src/app/SConscript'" SConscript \
+    || fail 'root SConscript does not include the app manifest'
+grep -Fq 'BSP_DIR := src/platform/board/stm32f103c8' Kconfig \
+    || fail 'root Kconfig has the wrong BSP_DIR'
+grep -Fq 'rsource "$(BSP_DIR)/soc/Kconfig"' Kconfig \
+    || fail 'root Kconfig does not include the board SoC Kconfig'
+grep -Fq 'rsource "$(BSP_DIR)/Kconfig"' Kconfig \
+    || fail 'root Kconfig does not include the board Kconfig'
+grep -Fq -- '-T src/platform/board/stm32f103c8/linker_scripts/link.lds' rtconfig.py \
+    || fail 'rtconfig.py has the wrong linker path'
+
+if grep -Eq "applications/SConscript|board/SConscript|rsource ['\"]?(board/Kconfig|libraries/Kconfig)|-T board/linker_scripts/link[.]lds" \
+    SConscript Kconfig rtconfig.py; then
+    fail 'active root build/configuration still references an old path'
+fi
+
 for command in build test flash debug console check-size; do
     test -x "tools/$command.sh" || fail "missing tools/$command.sh"
 done

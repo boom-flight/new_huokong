@@ -3,6 +3,9 @@ Import('env')
 from building import *
 
 objs = []
+board_script = 'src/platform/board/stm32f103c8/SConscript'
+# Apply board compile settings before platform SConscripts clone the environment.
+board_group = SConscript(board_script)
 scripts = [
     'src/modules/attitude/SConscript',
     'src/modules/devices/bmi088/SConscript',
@@ -11,23 +14,18 @@ scripts = [
     'src/platform/time/SConscript',
     'src/platform/transport/SConscript',
     'src/kernel/imu/SConscript',
-    'applications/SConscript',
+    'src/app/SConscript',
     'src/kernel/telemetry/SConscript',
-    'board/SConscript',
+    board_script,
     'src/modules/timing/SConscript',
     'src/modules/transport/SConscript',
     'packages/SConscript',
 ]
 
-# STM32F100xB || STM32F100xE || STM32F101x6
-# STM32F101xB || STM32F101xE || STM32F101xG
-# STM32F102x6 || STM32F102xB || STM32F103x6
-# STM32F103xB || STM32F103xE || STM32F103xG
-# STM32F105xC || STM32F107xC)
-# You can select chips from the list above
-env.Append(CPPDEFINES=['STM32F103xB'])
-
 for script in scripts:
-    objs.extend(SConscript(script))
+    if script == board_script:
+        objs.extend(board_group)
+    else:
+        objs.extend(SConscript(script))
 
 Return('objs')

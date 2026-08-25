@@ -1,4 +1,5 @@
 import os
+Import('env')
 from building import *
 
 cwd = GetCurrentDir()
@@ -13,5 +14,6 @@ CubeMX_Config/Src/stm32f1xx_hal_msp.c
 path =  [cwd]
 path += [cwd + '/CubeMX_Config/Inc']
 
+env.AppendUnique(CPPDEFINES=['STM32F103xB'])
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = path)
 Return('group')

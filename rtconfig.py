@@ -21,7 +21,7 @@ OBJCPY = PREFIX + 'objcopy'
 DEVICE = ' -mcpu=cortex-m3 -mthumb -ffunction-sections -fdata-sections'
 CFLAGS = DEVICE + ' -Dgcc -std=gnu11'
 AFLAGS = ' -c' + DEVICE + ' -x assembler-with-cpp'
-LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=build/firmware/huokong.map,-cref,-u,Reset_Handler -T board/linker_scripts/link.lds'
+LFLAGS = DEVICE + ' -Wl,--gc-sections,-Map=build/firmware/huokong.map,-cref,-u,Reset_Handler -T src/platform/board/stm32f103c8/linker_scripts/link.lds'
 
 CFLAGS += ' -O2 -gdwarf-2 -g'
 AFLAGS += ' -gdwarf-2'

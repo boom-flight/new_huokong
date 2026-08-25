@@ -2,7 +2,19 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-work="$root/tests/build/check-size-test"
+work="$root/build/tests/check-size-test"
+default_linker=src/platform/board/stm32f103c8/linker_scripts/link.lds
+
+grep -Fq "linker_script=\${LINKER_SCRIPT:-$default_linker}" \
+    "$root/tools/check-size.sh" || {
+    echo "check-size default linker path is not $default_linker" >&2
+    exit 1
+}
+if grep -Fq 'board/linker_scripts/link.lds' "$root/tools/check-size.sh"; then
+    echo 'check-size still references the old board linker path' >&2
+    exit 1
+fi
+
 rm -rf -- "$work"
 mkdir -p "$work"
 trap 'rm -rf -- "$work"' EXIT HUP INT TERM
@@ -230,7 +242,7 @@ EOF
 
 run_check() {
     SIZE_TOOL=$1 OBJDUMP_TOOL=$2 LINKER_SCRIPT=$3 MAP_FILE=$4 \
-        "$root/.script/check-size.sh" "$work/firmware.elf"
+        "$root/tools/check-size.sh" "$work/firmware.elf"
 }
 
 expect_failure() {
