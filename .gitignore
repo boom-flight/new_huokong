@@ -23,6 +23,7 @@ __pycache__/
 *.pyc
 .cache/
 .cmsis/
+.worktrees/
 
 # menuconfig 备份（.config 本体保留跟踪）
 *.old
