@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 全量重编 + 生成 compile_commands.json（clangd 索引用）
+# Rebuild STM32F103C8 and regenerate compile_commands.json for clangd.
 source "$(dirname "$0")/env.sh"
-scons -c
-bear -- scons -j"$(nproc)"
+"$(dirname "$0")/clean.sh"
+bear -- "$(dirname "$0")/build.sh"

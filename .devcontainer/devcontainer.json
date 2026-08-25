@@ -1,9 +1,10 @@
 {
-    "name": "new-huokong-develop",
+    "name": "stm32f103-bmi088-telemetry",
     "dockerComposeFile": ["docker-compose.yml"],
     "service": "develop",
     "workspaceFolder": "/workspaces/new_huokong",
     "postCreateCommand": "bash .script/setup-ubuntu.sh",
+    "containerEnv": { "RTT_EXEC_PATH": "/usr/bin", "RTT_CC": "gcc" },
     "customizations": {
         "vscode": {
             "settings": { "remote.autoForwardPorts": false },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2022, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -10,6 +10,8 @@
 
 #ifndef _ULOG_DEF_H_
 #define _ULOG_DEF_H_
+
+#include <rtdef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,16 +43,10 @@ extern "C" {
 #undef DBG_WARNING
 #undef DBG_INFO
 #undef DBG_LOG
-#undef dbg_log
 #define DBG_ERROR                      LOG_LVL_ERROR
 #define DBG_WARNING                    LOG_LVL_WARNING
 #define DBG_INFO                       LOG_LVL_INFO
 #define DBG_LOG                        LOG_LVL_DBG
-#define dbg_log(level, ...)                                \
-    if ((level) <= LOG_LVL)                                \
-    {                                                      \
-        ulog_output(level, LOG_TAG, RT_FALSE, __VA_ARGS__);\
-    }
 
 #if !defined(LOG_TAG)
     /* compatible for rtdbg */
@@ -201,13 +197,17 @@ struct ulog_backend
 {
     char name[RT_NAME_MAX];
     rt_bool_t support_color;
+    rt_uint32_t out_level;
     void (*init)  (struct ulog_backend *backend);
-    void (*output)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, size_t len);
+    void (*output)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
     void (*flush) (struct ulog_backend *backend);
     void (*deinit)(struct ulog_backend *backend);
+    /* The filter will be call before output. It will return TRUE when the filter condition is math. */
+    rt_bool_t (*filter)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
     rt_slist_t list;
 };
 typedef struct ulog_backend *ulog_backend_t;
+typedef rt_bool_t (*ulog_backend_filter_t)(struct ulog_backend *backend, rt_uint32_t level, const char *tag, rt_bool_t is_raw, const char *log, rt_size_t len);
 
 #ifdef __cplusplus
 }

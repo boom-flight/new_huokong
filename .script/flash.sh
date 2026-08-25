@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 编译并通过 ST-Link 烧录到 0x08000000
+# Build and flash the STM32F103C8 through ST-Link.
 source "$(dirname "$0")/env.sh"
 "$(dirname "$0")/build.sh"
-openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
+openocd -f interface/stlink.cfg -f target/stm32f1x.cfg \
         -c "program rtthread.bin 0x08000000 verify reset exit"

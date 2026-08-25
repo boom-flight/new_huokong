@@ -26,11 +26,11 @@
 #
 
 """
-wizard.py - a script to generate SConscript in RT-Thread RTOS. 
+wizard.py - a script to generate SConscript in RT-Thread RTOS.
 
 `wizard --component name' to generate SConscript for name component.
-`wizard --bridge' to generate SConscript as a bridge to connect each 
-SConscript script file of sub-directory. 
+`wizard --bridge' to generate SConscript as a bridge to connect each
+SConscript script file of sub-directory.
 """
 
 import sys
@@ -40,7 +40,7 @@ SConscript_com = '''# RT-Thread building script for component
 from building import *
 
 cwd = GetCurrentDir()
-src = Glob('*.c') + Glob('*.cpp')
+src = Glob('*.c') + Glob('*.cpp') + Glob('*.cxx') + Glob('*.cc')
 CPPPATH = [cwd]
 
 group = DefineGroup('COMPONENT_NAME', src, depend = [''], CPPPATH = CPPPATH)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         usage()
         sys.exit(2)
-    
+
     if sys.argv[1] == '--component':
         gen_component(sys.argv[2])
     elif sys.argv[1] == '--bridge':

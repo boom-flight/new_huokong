@@ -11,17 +11,17 @@ config RT_USING_RYM
 
         config YMODEM_USING_FILE_TRANSFER
         bool "Enable file transfer feature"
-        select RT_USING_DFS
-        default n
+        depends on RT_USING_DFS
+        default y
     endif
 
-config RT_USING_ULOG
+menuconfig RT_USING_ULOG
     bool "Enable ulog"
     default n
 
     if RT_USING_ULOG
         if !ULOG_USING_SYSLOG
-            choice
+            choice ULOG_OUTPUT_LOG_LEVEL
                 prompt "The static output log level."
                 default ULOG_OUTPUT_LVL_D
                 help
@@ -42,7 +42,7 @@ config RT_USING_ULOG
         endif
 
         if ULOG_USING_SYSLOG
-            choice
+            choice ULOG_OUTPUT_LOG_LEVEL
                 prompt "The static output log level."
                 default ULOG_OUTPUT_LVL_DEBUG
                 help
@@ -136,8 +136,8 @@ config RT_USING_ULOG
         menu "log format"
             config ULOG_OUTPUT_FLOAT
                 bool "Enable float number support. It will using more thread stack."
-                select RT_USING_LIBC
                 default n
+                select RT_KLIBC_USING_VSNPRINTF_STANDARD
                 help
                     The default formater is using rt_vsnprint and it not supported float number.
                     When enable this option then it will enable libc. The formater will change to vsnprint on libc.
@@ -178,6 +178,13 @@ config RT_USING_ULOG
             help
                 The low level output using rt_kprintf().
 
+        config ULOG_BACKEND_USING_FILE
+            bool "Enable file backend."
+            select RT_USING_DFS
+            default n
+            help
+                The file backend of ulog.
+
         config ULOG_USING_FILTER
             bool "Enable runtime log filter."
             default n
@@ -203,6 +210,30 @@ config RT_USING_UTEST
         config UTEST_THR_PRIORITY
             int "The utest thread priority"
             default 20
+
+        config RT_UTEST_USING_AUTO_RUN
+            bool "Enable auto run test cases"
+            default n
+            help
+                If enable this option, the test cases will be run automatically when board boot up.
+
+        if FINSH_USING_OPTION_COMPLETION
+            config RT_UTEST_MAX_OPTIONS
+                int "Maximum number of utest cases for auto-completion"
+                default 64
+        endif
+
     endif
+
+config RT_USING_VAR_EXPORT
+    bool "Enable Var Export"
+    default n
+
+config RT_USING_RESOURCE_ID
+    bool "Enable resource id"
+    default n
+
+rsource "libadt/Kconfig"
+rsource "rt-link/Kconfig"
 
 endmenu

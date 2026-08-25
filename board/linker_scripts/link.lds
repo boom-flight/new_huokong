@@ -1,15 +1,15 @@
 /*
- * linker script for STM32L4XX with GNU ld
+ * linker script for STM32F10x with GNU ld
  */
 
 /* Program Entry, set to mark it as "used" and avoid gc */
 MEMORY
 {
-    ROM (rx) : ORIGIN = 0x08000000, LENGTH = 2048k /* 2048KB flash */
-    RAM (rw) : ORIGIN = 0x20000000, LENGTH =  128k  /* 128KB sram */
+    ROM (rx)  : ORIGIN = 0x08000000, LENGTH = 64K
+    RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 20K
 }
 ENTRY(Reset_Handler)
-_system_stack_size = 0x200;
+_system_stack_size = 0x400;
 
 SECTIONS
 {
@@ -88,16 +88,16 @@ SECTIONS
         . = ALIGN(4);
         /* This is used by the startup in order to initialize the .data secion */
         _edata = . ;
-    } > RAM
+    } >RAM
 
-    .stack : 
+    .stack :
     {
         . = ALIGN(4);
         _sstack = .;
         . = . + _system_stack_size;
         . = ALIGN(4);
         _estack = .;
-    } > RAM
+    } >RAM
 
     __bss_start = .;
     .bss :
@@ -113,7 +113,7 @@ SECTIONS
         . = ALIGN(4);
         /* This is used by the startup in order to initialize the .bss secion */
         _ebss = . ;
-        
+
         *(.bss.init)
     } > RAM
     __bss_end = .;

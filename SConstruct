@@ -1,64 +1,60 @@
 import os
 import sys
+
 import rtconfig
 
-if os.getenv('RTT_ROOT'):
-    RTT_ROOT = os.getenv('RTT_ROOT')
-else:
-    RTT_ROOT = os.path.normpath(os.getcwd() + '/../../..')
+RTT_ROOT = os.getenv('RTT_ROOT', os.path.join(os.getcwd(), 'rt-thread'))
+sys.path.append(os.path.join(RTT_ROOT, 'tools'))
+from building import *
 
-# set RTT_ROOT
-if not os.getenv("RTT_ROOT"): 
-    RTT_ROOT="rt-thread"
 
-sys.path = sys.path + [os.path.join(RTT_ROOT, 'tools')]
-try:
-    from building import *
-except:
-    print('Cannot found RT-Thread root directory, please check RTT_ROOT')
-    print(RTT_ROOT)
-    exit(-1)
+def bsp_pkg_check():
+    required = [
+        'packages/CMSIS-Core-latest',
+        'packages/stm32f1_cmsis_driver-latest',
+        'packages/stm32f1_hal_driver-latest',
+    ]
+    if not all(os.path.isdir(path) for path in required):
+        print('Vendored dependency package is missing; restore the pinned source snapshot.')
+        Exit(1)
+
+
+RegisterPreBuildingAction(bsp_pkg_check)
 
 TARGET = 'rt-thread.' + rtconfig.TARGET_EXT
-
 DefaultEnvironment(tools=[])
-env = Environment(tools = ['mingw'],
-    AS = rtconfig.AS, ASFLAGS = rtconfig.AFLAGS,
-    CC = rtconfig.CC, CCFLAGS = rtconfig.CFLAGS,
-    AR = rtconfig.AR, ARFLAGS = '-rc',
-    CXX = rtconfig.CXX, CXXFLAGS = rtconfig.CXXFLAGS,
-    LINK = rtconfig.LINK, LINKFLAGS = rtconfig.LFLAGS)
+env = Environment(
+    tools=['mingw'],
+    AS=rtconfig.AS,
+    ASFLAGS=rtconfig.AFLAGS,
+    CC=rtconfig.CC,
+    CFLAGS=rtconfig.CFLAGS,
+    AR=rtconfig.AR,
+    ARFLAGS='-rc',
+    CXX=rtconfig.CXX,
+    CXXFLAGS=rtconfig.CXXFLAGS,
+    LINK=rtconfig.LINK,
+    LINKFLAGS=rtconfig.LFLAGS,
+)
 env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
+env.AppendUnique(CPPPATH=['algorithm', 'drivers', 'protocol'])
+env.AppendUnique(LIBS=['m'])
 
-if rtconfig.PLATFORM == 'iar':
-    env.Replace(CCCOM = ['$CC $CCFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS -o $TARGET $SOURCES'])
-    env.Replace(ARFLAGS = [''])
-    env.Replace(LINKCOM = env["LINKCOM"] + ' --map rt-thread.map')
-
+Export('env')
 Export('RTT_ROOT')
 Export('rtconfig')
 
-SDK_ROOT = os.path.abspath('./')
-
-if os.path.exists(SDK_ROOT + '/libraries'):
-    libraries_path_prefix = SDK_ROOT + '/libraries'
-else:
-    libraries_path_prefix = os.path.dirname(SDK_ROOT) + '/libraries'
-
-SDK_LIB = libraries_path_prefix
-Export('SDK_LIB')
-
-# prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
+objs.extend(SConscript('libraries/HAL_Drivers/SConscript',
+                       variant_dir='build/libraries/HAL_Drivers', duplicate=0))
 
-stm32_library = 'STM32F4xx_HAL'
-rtconfig.BSP_LIBRARY_TYPE = stm32_library
+direct_hal = [
+    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_spi.c',
+    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_tim.c',
+    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_tim_ex.c',
+]
+objs.extend(DefineGroup('Direct HAL', direct_hal, depend=[''],
+    CPPPATH=['packages/stm32f1_hal_driver-latest/Inc'],
+    CPPDEFINES=['USE_HAL_DRIVER']))
 
-# include libraries
-objs.extend(SConscript(os.path.join(libraries_path_prefix, stm32_library, 'SConscript')))
-
-# include drivers
-objs.extend(SConscript(os.path.join(libraries_path_prefix, 'HAL_Drivers', 'SConscript')))
-
-# make a building
 DoBuilding(TARGET, objs)

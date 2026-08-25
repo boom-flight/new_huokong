@@ -2,27 +2,27 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug (ST-Link + OpenOCD)",
+            "name": "Debug STM32F103C8 (ST-Link + OpenOCD)",
             "type": "cortex-debug",
             "request": "launch",
             "servertype": "openocd",
             "executable": "${workspaceFolder}/rt-thread.elf",
-            "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
-            "device": "STM32F427II",
-            "svdFile": "${workspaceFolder}/.vscode/STM32F427.svd",
+            "configFiles": ["interface/stlink.cfg", "target/stm32f1x.cfg"],
+            "device": "STM32F103C8",
+            "svdFile": "${workspaceFolder}/.vscode/STM32F103xx.svd",
             "runToEntryPoint": "main",
-            "preLaunchTask": "build",
+            "preLaunchTask": "firmware build + size",
             "showDevDebugOutput": "none"
         },
         {
-            "name": "Attach (不复位，附加到运行中程序)",
+            "name": "Attach STM32F103C8",
             "type": "cortex-debug",
             "request": "attach",
             "servertype": "openocd",
             "executable": "${workspaceFolder}/rt-thread.elf",
-            "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
-            "device": "STM32F427II",
-            "svdFile": "${workspaceFolder}/.vscode/STM32F427.svd"
+            "configFiles": ["interface/stlink.cfg", "target/stm32f1x.cfg"],
+            "device": "STM32F103C8",
+            "svdFile": "${workspaceFolder}/.vscode/STM32F103xx.svd"
         }
     ]
 }

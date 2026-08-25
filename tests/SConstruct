@@ -1,0 +1,49 @@
+env = Environment(
+    CC='cc',
+    CFLAGS=['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-pedantic'],
+    CPPPATH=['..', '../algorithm', '../drivers', '../applications', '../protocol'],
+    LIBS=['m'],
+)
+
+test_timestamp_extender = env.Program(
+    target='build/test_timestamp_extender',
+    source=['test_timestamp_extender.c', '../drivers/timestamp_extender.c'],
+)
+Alias('test_timestamp_extender', test_timestamp_extender)
+
+test_bmi088 = env.Program(
+    target='build/test_bmi088',
+    source=['test_bmi088.c', 'fake_bmi088_bus.c', '../drivers/bmi088.c'],
+)
+Alias('test_bmi088', test_bmi088)
+
+test_imu_telemetry = env.Program(
+    target='build/test_imu_telemetry',
+    source=['test_imu_telemetry.c', '../protocol/imu_telemetry.c'],
+)
+Alias('test_imu_telemetry', test_imu_telemetry)
+
+test_mahony = env.Program(
+    target='build/test_mahony',
+    source=['test_mahony.c', '../algorithm/mahony.c'],
+)
+Alias('test_mahony', test_mahony)
+
+test_imu_calibration = env.Program(
+    target='build/test_imu_calibration',
+    source=['test_imu_calibration.c', '../algorithm/imu_calibration.c'],
+)
+Alias('test_imu_calibration', test_imu_calibration)
+
+test_imu_service_logic = env.Program(
+    target='build/test_imu_service_logic',
+    source=['test_imu_service_logic.c', '../applications/imu_service_logic.c',
+            '../algorithm/imu_calibration.c', '../algorithm/mahony.c'],
+)
+Alias('test_imu_service_logic', test_imu_service_logic)
+
+test_telemetry_dma_state = env.Program(
+    target='build/test_telemetry_dma_state',
+    source=['test_telemetry_dma_state.c', '../drivers/telemetry_dma_state.c'],
+)
+Alias('test_telemetry_dma_state', test_telemetry_dma_state)

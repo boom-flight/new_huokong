@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2021, RT-Thread Development Team
+ * Copyright (c) 2006-2023, RT-Thread Development Team
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -9,6 +9,7 @@
  * 2012-12-12     heyuanjie87  change endpoint and function handler
  * 2013-04-26     aozima       add DEVICEQUALIFIER support.
  * 2017-11-15     ZYH          fix ep0 transform error
+ * 2023-10-11     ChuShicheng  change rt_size_t to rt_ssize_t
  */
 
 #ifndef  __USB_DEVICE_H__
@@ -32,6 +33,10 @@ extern "C" {
 #define _PRODUCT_ID                 USB_PRODUCT_ID
 #else
 #define _PRODUCT_ID                 0x0001
+#endif
+
+#ifndef MAX_INTF_STR
+#define MAX_INTF_STR 20
 #endif
 
 #define USB_BCD_DEVICE              0x0200   /* USB Specification Release Number in Binary-Coded Decimal */
@@ -58,6 +63,8 @@ extern "C" {
                                         }                                           \
                                     }while(0)
 
+#define RT_USBD_CLASS_CTRL_CONNECTED (RT_DEVICE_CTRL_BASE(USBDevice) + 0)
+
 struct ufunction;
 struct udevice;
 struct uendpoint;
@@ -80,9 +87,9 @@ struct udcd_ops
     rt_err_t (*ep_clear_stall)(rt_uint8_t address);
     rt_err_t (*ep_enable)(struct uendpoint* ep);
     rt_err_t (*ep_disable)(struct uendpoint* ep);
-    rt_size_t (*ep_read_prepare)(rt_uint8_t address, void *buffer, rt_size_t size);
-    rt_size_t (*ep_read)(rt_uint8_t address, void *buffer);
-    rt_size_t (*ep_write)(rt_uint8_t address, void *buffer, rt_size_t size);
+    rt_ssize_t (*ep_read_prepare)(rt_uint8_t address, void *buffer, rt_size_t size);
+    rt_ssize_t (*ep_read)(rt_uint8_t address, void *buffer);
+    rt_ssize_t (*ep_write)(rt_uint8_t address, void *buffer, rt_size_t size);
     rt_err_t (*ep0_send_status)(void);
     rt_err_t (*suspend)(void);
     rt_err_t (*wakeup)(void);
@@ -193,7 +200,7 @@ struct udevice
     struct usb_qualifier_descriptor * dev_qualifier;
     usb_os_comp_id_desc_t    os_comp_id_desc;
     const char** str;
-
+    const char *str_intf[MAX_INTF_STR];
     udevice_state_t state;
     rt_list_t cfg_list;
     uconfig_t curr_cfg;
@@ -260,6 +267,7 @@ rt_err_t rt_usbd_event_signal(struct udev_msg* msg);
 rt_err_t rt_usbd_device_set_controller(udevice_t device, udcd_t dcd);
 rt_err_t rt_usbd_device_set_descriptor(udevice_t device, udev_desc_t dev_desc);
 rt_err_t rt_usbd_device_set_string(udevice_t device, const char** ustring);
+rt_err_t rt_usbd_device_set_interface_string(udevice_t device, int index, const char* string);
 rt_err_t rt_usbd_device_set_qualifier(udevice_t device, struct usb_qualifier_descriptor* qualifier);
 rt_err_t rt_usbd_device_set_os_comp_id_desc(udevice_t device, usb_os_comp_id_desc_t os_comp_id_desc);
 rt_err_t rt_usbd_device_add_config(udevice_t device, uconfig_t cfg);

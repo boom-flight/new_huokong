@@ -6,41 +6,54 @@
     },
     "tasks": [
         {
-            "label": "build",
+            "label": "firmware build + size",
             "type": "shell",
-            "command": "scons -j$(nproc)",
+            "command": ".script/build.sh",
             "group": { "kind": "build", "isDefault": true },
             "problemMatcher": "$gcc"
         },
         {
-            "label": "build (重建clangd索引)",
+            "label": "rebuild clangd index",
             "type": "shell",
-            "command": "scons -c && bear -- scons -j$(nproc)",
+            "command": ".script/rebuild-index.sh",
             "problemMatcher": "$gcc"
         },
         {
             "label": "clean",
             "type": "shell",
-            "command": "scons -c",
+            "command": ".script/clean.sh",
             "problemMatcher": []
         },
         {
-            "label": "flash (ST-Link)",
+            "label": "host tests",
             "type": "shell",
-            "command": "openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c 'program rtthread.bin 0x08000000 verify reset exit'",
-            "dependsOn": "build",
+            "command": ".script/test.sh",
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "flash STM32F103",
+            "type": "shell",
+            "command": ".script/flash.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "debug STM32F103",
+            "type": "shell",
+            "command": ".script/gdb.sh",
+            "dependsOn": "firmware build + size",
             "problemMatcher": []
         },
         {
             "label": "menuconfig",
             "type": "shell",
-            "command": "scons --menuconfig",
+            "command": ".script/menuconfig.sh",
             "problemMatcher": []
         },
         {
-            "label": "msh 串口控制台 (UART6)",
+            "label": "USART1 console",
             "type": "shell",
-            "command": "picocom -b 115200 /dev/ttyUSB0",
+            "command": ".script/console.sh",
             "isBackground": true,
             "problemMatcher": []
         }
