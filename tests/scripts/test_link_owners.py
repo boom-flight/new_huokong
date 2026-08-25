@@ -7,14 +7,29 @@ import sys
 
 
 EXPECTED_OWNERS = {
-    "EXTI15_10_IRQHandler": "bmi088_stm32",
-    "TIM2_IRQHandler": "monotonic_clock_stm32",
-    "HAL_TIM_PeriodElapsedCallback": "monotonic_clock_stm32",
-    "DMA1_Channel7_IRQHandler": "telemetry_uart_stm32",
-    "USART2_IRQHandler": "telemetry_uart_stm32",
-    "HAL_UART_TxCpltCallback": "telemetry_uart_stm32",
-    "HAL_UART_ErrorCallback": "telemetry_uart_stm32",
+    "EXTI15_10_IRQHandler": (
+        "build/firmware/platform/devices/bmi088_stm32.o"
+    ),
+    "TIM2_IRQHandler": (
+        "build/firmware/platform/time/monotonic_clock_stm32.o"
+    ),
+    "HAL_TIM_PeriodElapsedCallback": (
+        "build/firmware/platform/time/monotonic_clock_stm32.o"
+    ),
+    "DMA1_Channel7_IRQHandler": (
+        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+    ),
+    "USART2_IRQHandler": (
+        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+    ),
+    "HAL_UART_TxCpltCallback": (
+        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+    ),
+    "HAL_UART_ErrorCallback": (
+        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+    ),
 }
+REPOSITORY_ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 def strong_definitions(elf_path):
@@ -32,32 +47,60 @@ def strong_definitions(elf_path):
         if match is None:
             continue
         owner, symbol_type, symbol = match.groups()
-        if symbol in definitions and symbol_type.isupper() and symbol_type not in {
-            "U",
-            "V",
-            "W",
-        }:
+        if symbol in definitions:
             definitions[symbol].append((owner, symbol_type))
     return definitions
 
 
+def normalize_map_owner(owner):
+    path = pathlib.Path(owner)
+    if path.is_absolute():
+        try:
+            path = path.relative_to(REPOSITORY_ROOT)
+        except ValueError:
+            return path.as_posix()
+    return path.as_posix()
+
+
 def map_owners(map_path):
     owners = {symbol: [] for symbol in EXPECTED_OWNERS}
-    object_pattern = re.compile(r"([^\s()]+\.o)(?:\)|\s|$)")
-    symbol_pattern = re.compile(
-        r"^\s*0x[0-9A-Fa-f]+\s+(" + "|".join(
+    target_sections = re.compile(
+        r"^\s+\.text\.(" + "|".join(
             re.escape(symbol) for symbol in EXPECTED_OWNERS
         ) + r")\s*$"
     )
-    current_object = None
+    input_section = re.compile(
+        r"^\s+0x[0-9A-Fa-f]+\s+0x[0-9A-Fa-f]+\s+(\S+\.o)\s*$"
+    )
+    any_section = re.compile(r"^\s+\.\S+")
+    lines = map_path.read_text(
+        encoding="utf-8", errors="replace"
+    ).splitlines()
 
-    for line in map_path.read_text(encoding="utf-8", errors="replace").splitlines():
-        object_matches = object_pattern.findall(line)
-        if object_matches:
-            current_object = object_matches[-1]
-        symbol_match = symbol_pattern.match(line)
-        if symbol_match is not None:
-            owners[symbol_match.group(1)].append(current_object)
+    for index, line in enumerate(lines):
+        section_match = target_sections.match(line)
+        if section_match is None:
+            continue
+
+        symbol = section_match.group(1)
+        symbol_pattern = re.compile(
+            rf"^\s+0x[0-9A-Fa-f]+\s+{re.escape(symbol)}\s*$"
+        )
+        object_records = []
+        symbol_definitions = 0
+        for block_line in lines[index + 1:]:
+            if any_section.match(block_line):
+                break
+            object_match = input_section.match(block_line)
+            if object_match is not None:
+                object_records.append(normalize_map_owner(object_match.group(1)))
+            if symbol_pattern.match(block_line):
+                symbol_definitions += 1
+
+        if len(object_records) == 1:
+            owners[symbol].extend(object_records * symbol_definitions)
+        elif symbol_definitions != 0:
+            owners[symbol].extend([None] * symbol_definitions)
     return owners
 
 
@@ -78,10 +121,18 @@ def main():
 
     for symbol, expected_owner in EXPECTED_OWNERS.items():
         symbol_definitions = definitions[symbol]
-        if len(symbol_definitions) != 1:
+        strong_symbol_definitions = [
+            definition
+            for definition in symbol_definitions
+            if definition[1].isupper()
+            and definition[1] not in {"U", "V", "W"}
+        ]
+        if len(symbol_definitions) != 1 or len(strong_symbol_definitions) != 1:
             failures.append(
                 f"{symbol}: expected exactly one strong definition, "
-                f"found {len(symbol_definitions)}"
+                f"found {len(strong_symbol_definitions)} strong and "
+                f"{len(symbol_definitions) - len(strong_symbol_definitions)} "
+                "weak/other"
             )
             continue
 
@@ -93,7 +144,7 @@ def main():
             )
             continue
         actual_owner = symbol_owners[0]
-        if actual_owner is None or pathlib.Path(actual_owner).stem != expected_owner:
+        if actual_owner != expected_owner:
             failures.append(
                 f"{symbol}: expected owner {expected_owner}, found "
                 f"{actual_owner or 'unknown'}"
