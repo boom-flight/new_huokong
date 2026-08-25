@@ -9,7 +9,8 @@ driver_group = DefineGroup(
     'BMI088 Port',
     ['bmi088_port.c'],
     depend=[''],
-    CPPPATH=[cwd, root, module_root, device_root],
+    CPPPATH=[cwd, root, module_root],
+    LOCAL_CPPPATH=[device_root],
     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
 )
 
