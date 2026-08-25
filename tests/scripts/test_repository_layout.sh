@@ -19,7 +19,28 @@ done
 test ! -d .script || fail '.script compatibility directory still exists'
 test ! -d tests/build || fail 'host test artifacts are outside root build'
 
-outside_object=$(find algorithm applications board drivers libraries packages \
-    protocol rt-thread -type f \( -name '*.o' -o -name '*.obj' \) -print -quit)
+if ! scons_tree=$(scons -n -Q --tree=all 2>&1); then
+    fail 'cannot inspect planned firmware targets'
+fi
+planned_outside_object=$(printf '%s\n' "$scons_tree" | awk '
+    /[+]-.*\.(o|obj)$/ {
+        path = $0
+        sub(/^.*[+]-/, "", path)
+        if (path !~ /^build\//) {
+            print path
+            exit
+        }
+    }
+')
+test -z "$planned_outside_object" \
+    || fail "planned object is outside root build: $planned_outside_object"
+
+outside_object=$(find . \
+    \( -path './build' -o -path './.git' -o \
+       -path './.superpowers/sdd' -o -path './.cache' -o \
+       -path './.vendor-cache' -o -path './.cmsis' -o \
+       -name __pycache__ \) -prune -o \
+    -type f \( -name '*.o' -o -name '*.obj' \) -print | \
+    awk 'NR == 1 { print; exit }')
 test -z "$outside_object" \
     || fail "generated object is outside root build: $outside_object"
