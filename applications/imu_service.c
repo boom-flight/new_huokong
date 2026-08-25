@@ -2,7 +2,7 @@
 
 #include "attitude/imu_calibration.h"
 #include "attitude/mahony.h"
-#include "drivers/bmi088.h"
+#include "bmi088/bmi088.h"
 #include "drivers/bmi088_port.h"
 #include "imu_service_logic.h"
 

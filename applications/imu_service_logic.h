@@ -4,7 +4,7 @@
 #include "imu_service.h"
 #include "attitude/imu_calibration.h"
 #include "attitude/mahony.h"
-#include "drivers/bmi088.h"
+#include "bmi088/bmi088.h"
 
 #include <stdbool.h>
 #include <stdint.h>

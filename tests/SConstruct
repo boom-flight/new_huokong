@@ -28,9 +28,12 @@ include_paths = [
     'drivers',
     'applications',
     'src/modules',
+    'src/modules/devices',
 ]
 module_include_paths = ['src/modules']
 protocol_include_paths = ['src/modules/protocols'] + module_include_paths
+device_include_paths = ['src/modules/devices'] + module_include_paths
+bmi088_test_include_paths = ['tests/fakes'] + device_include_paths
 
 test_timestamp_extender = host_test(
     'test_timestamp_extender',
@@ -44,8 +47,12 @@ Alias('test_timestamp_extender', test_timestamp_extender)
 
 test_bmi088 = host_test(
     'test_bmi088',
-    ['tests/test_bmi088.c', 'tests/fake_bmi088_bus.c', 'drivers/bmi088.c'],
-    include_paths,
+    [
+        'tests/modules/devices/bmi088/test_bmi088.c',
+        'tests/fakes/fake_bmi088_bus.c',
+        'src/modules/devices/bmi088/bmi088.c',
+    ],
+    bmi088_test_include_paths,
 )
 Alias('test_bmi088', test_bmi088)
 

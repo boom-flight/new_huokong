@@ -1,0 +1,18 @@
+Import('env')
+from building import DefineGroup
+
+module_root = Dir('#src/modules').abspath
+bmi088_env = env.Clone(BUILDERS={})
+bmi088_env.Tool('cc')
+bmi088_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+bmi088_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    bmi088_env.Tool('compilation_db')
+
+bmi088_objects = bmi088_env.Object(
+    target='#build/firmware/modules/devices/bmi088/bmi088',
+    source='bmi088.c',
+)
+bmi088_group = DefineGroup('BMI088', bmi088_objects, depend=[''])
+
+Return('bmi088_group')

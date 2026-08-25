@@ -1,7 +1,7 @@
 #ifndef BMI088_PORT_H
 #define BMI088_PORT_H
 
-#include "bmi088.h"
+#include "bmi088/bmi088.h"
 
 #include <stdbool.h>
 #include <stddef.h>

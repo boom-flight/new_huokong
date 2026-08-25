@@ -1,4 +1,4 @@
-#include "bmi088.h"
+#include "bmi088/bmi088.h"
 #include "fake_bmi088_bus.h"
 
 #include <assert.h>

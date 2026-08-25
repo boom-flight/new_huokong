@@ -5,6 +5,7 @@ from building import *
 objs = []
 scripts = [
     'src/modules/attitude/SConscript',
+    'src/modules/devices/bmi088/SConscript',
     'src/modules/protocols/imu_telemetry/SConscript',
     'applications/SConscript',
     'board/SConscript',

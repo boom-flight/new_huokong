@@ -1,7 +1,7 @@
 #ifndef FAKE_BMI088_BUS_H
 #define FAKE_BMI088_BUS_H
 
-#include "bmi088.h"
+#include "bmi088/bmi088.h"
 
 #include <stdbool.h>
 #include <stddef.h>
