@@ -62,8 +62,8 @@ def normalize_map_owner(owner):
     return path.as_posix()
 
 
-def map_owners(map_path):
-    owners = {symbol: [] for symbol in EXPECTED_OWNERS}
+def map_blocks(map_path):
+    blocks = {symbol: [] for symbol in EXPECTED_OWNERS}
     target_sections = re.compile(
         r"^\s+\.text\.(" + "|".join(
             re.escape(symbol) for symbol in EXPECTED_OWNERS
@@ -76,8 +76,13 @@ def map_owners(map_path):
     lines = map_path.read_text(
         encoding="utf-8", errors="replace"
     ).splitlines()
+    linked_map_start = next(
+        index for index, line in enumerate(lines)
+        if line.strip() == "Linker script and memory map"
+    )
 
-    for index, line in enumerate(lines):
+    for index in range(linked_map_start + 1, len(lines)):
+        line = lines[index]
         section_match = target_sections.match(line)
         if section_match is None:
             continue
@@ -97,11 +102,8 @@ def map_owners(map_path):
             if symbol_pattern.match(block_line):
                 symbol_definitions += 1
 
-        if len(object_records) == 1:
-            owners[symbol].extend(object_records * symbol_definitions)
-        elif symbol_definitions != 0:
-            owners[symbol].extend([None] * symbol_definitions)
-    return owners
+        blocks[symbol].append((object_records, symbol_definitions))
+    return blocks
 
 
 def main():
@@ -116,7 +118,7 @@ def main():
         return 2
 
     definitions = strong_definitions(elf_path)
-    owners = map_owners(map_path)
+    blocks = map_blocks(map_path)
     failures = []
 
     for symbol, expected_owner in EXPECTED_OWNERS.items():
@@ -136,14 +138,27 @@ def main():
             )
             continue
 
-        symbol_owners = owners[symbol]
-        if len(symbol_owners) != 1:
+        valid_owners = []
+        for block_index, (object_records, map_definitions) in enumerate(
+            blocks[symbol], start=1
+        ):
+            if len(object_records) != 1 or map_definitions != 1:
+                failures.append(
+                    f"{symbol}: malformed Map block {block_index}: expected "
+                    "exactly one object record and one symbol definition, "
+                    f"found object_records={len(object_records)}, "
+                    f"symbol_definitions={map_definitions}"
+                )
+                continue
+            valid_owners.append(object_records[0])
+
+        if len(valid_owners) != 1:
             failures.append(
-                f"{symbol}: expected exactly one Map owner, found "
-                f"{len(symbol_owners)} ({symbol_owners})"
+                f"{symbol}: expected exactly one valid Map block, found "
+                f"{len(valid_owners)}"
             )
             continue
-        actual_owner = symbol_owners[0]
+        actual_owner = valid_owners[0]
         if actual_owner != expected_owner:
             failures.append(
                 f"{symbol}: expected owner {expected_owner}, found "
