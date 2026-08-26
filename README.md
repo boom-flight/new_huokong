@@ -14,7 +14,7 @@ tools/debug.sh
 tools/console.sh
 ```
 
-`tools/test.sh` 运行主机端 C 测试以及仓库门禁；`tools/build.sh` 构建固件并执行 Flash/SRAM 容量门禁。烧录和调试入口支持 CMSIS-DAP/DAPLink/FireDAP、ST-Link 和 J-Link；未识别或同时连接多个探针时，可使用 `HUOKONG_PROBE=cmsis-dap|stlink|jlink` 明确选择。执行 `tools/openocd.sh --detect` 可只检查探针识别结果。
+`tools/test.sh` 运行主机端 C 测试以及仓库门禁；`tools/build.sh` 构建固件并执行 Flash/SRAM 容量门禁。烧录和调试入口支持 CMSIS-DAP/DAPLink/FireDAP、ST-Link 和 J-Link；未识别或同时连接多个探针时，可使用 `HUOKONG_PROBE=cmsis-dap|stlink|jlink` 明确选择。
 
 ## 文档
 
