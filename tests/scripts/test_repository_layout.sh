@@ -31,6 +31,19 @@ test ! -d libraries/HAL_Drivers \
 test -f vendor/manifest.md || fail 'missing vendor provenance manifest'
 test ! -d packages || fail 'root packages/ directory still exists'
 
+for document in \
+    docs/architecture/overview.md \
+    docs/architecture/dependency-rules.md \
+    docs/development/build-test-debug.md \
+    docs/protocols/imu-telemetry-v1.md \
+    docs/requirements/firmware-behavior.md \
+    docs/hardware/acceptance.md \
+    docs/hardware/source/README.md; do
+    test -s "$document" || fail "missing active document: $document"
+done
+grep -Fq '待上板验证' docs/hardware/acceptance.md \
+    || fail 'hardware acceptance status is not pending board validation'
+
 test -f src/app/main.c || fail 'missing src/app/main.c'
 test -f src/app/SConscript || fail 'missing src/app/SConscript'
 board_root=src/platform/board/stm32f103c8
@@ -84,6 +97,17 @@ fi
 for command in build test flash debug console check-size; do
     test -x "tools/$command.sh" || fail "missing tools/$command.sh"
 done
+
+test -x tests/scripts/test_check_size.sh \
+    || fail 'size test is not under tests/scripts'
+test -x tests/scripts/test_test_runner.sh \
+    || fail 'test runner self-test is not under tests/scripts'
+
+if git grep -nE '\.script/|rt-thread\.elf|rtthread\.bin|rt-thread\.map|tests/build' -- \
+    README.md .vscode .devcontainer docs/architecture docs/development \
+    docs/hardware docs/protocols docs/requirements; then
+    fail 'active entry points reference a retired path or artifact'
+fi
 
 test ! -d .script || fail '.script compatibility directory still exists'
 test ! -d tests/build || fail 'host test artifacts are outside root build'

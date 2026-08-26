@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 work="$root/build/tests/check-size-test"
 default_linker=src/platform/board/stm32f103c8/linker_scripts/link.lds
 

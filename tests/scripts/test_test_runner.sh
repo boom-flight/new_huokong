@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/rmcs-test-runner.XXXXXX")
 trap 'rm -rf -- "$work"' EXIT HUP INT TERM
 mkdir -p "$work/bin" "$work/empty"
@@ -20,7 +20,7 @@ expect_no_c_tests() {
     discovery_dir=$1
     name=$2
     if PATH="$work/bin:$PATH" TEST_DISCOVERY_DIR="$discovery_dir" \
-        "$root/.script/test.sh" >"$work/$name-output" 2>&1; then
+        "$root/tools/test.sh" >"$work/$name-output" 2>&1; then
         echo "expected $name C test discovery to fail" >&2
         exit 1
     fi

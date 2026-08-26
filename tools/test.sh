@@ -37,3 +37,9 @@ mapfile -t executables < <(printf '%s\n' "${executables[@]}" | LC_ALL=C sort)
 for executable in "${executables[@]}"; do
     "$executable"
 done
+
+sh tests/scripts/test_check_size.sh
+if [[ ${SKIP_TEST_RUNNER_SELF_TEST:-0} != 1 ]]; then
+    SKIP_TEST_RUNNER_SELF_TEST=1 sh tests/scripts/test_test_runner.sh
+fi
+sh tests/scripts/test_repository_layout.sh
