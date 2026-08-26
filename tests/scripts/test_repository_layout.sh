@@ -102,6 +102,8 @@ test -x tests/scripts/test_check_size.sh \
     || fail 'size test is not under tests/scripts'
 test -x tests/scripts/test_test_runner.sh \
     || fail 'test runner self-test is not under tests/scripts'
+test -x tests/scripts/test_layout_fail_closed.sh \
+    || fail 'layout fail-closed self-test is missing'
 
 if git grep -nE '\.script/|rt-thread\.elf|rtthread\.bin|rt-thread\.map|tests/build' -- \
     README.md .vscode .devcontainer docs/architecture docs/development \
@@ -128,12 +130,15 @@ planned_outside_object=$(printf '%s\n' "$scons_tree" | awk '
 test -z "$planned_outside_object" \
     || fail "planned object is outside root build: $planned_outside_object"
 
-outside_object=$(find . \
+if ! object_files=$(find . \
     \( -path './build' -o -path './.git' -o \
        -path './.superpowers/sdd' -o -path './.cache' -o \
        -path './.vendor-cache' -o -path './.cmsis' -o \
        -name __pycache__ \) -prune -o \
-    -type f \( -name '*.o' -o -name '*.obj' \) -print | \
+     -type f \( -name '*.o' -o -name '*.obj' \) -print); then
+    fail 'cannot scan generated objects'
+fi
+outside_object=$(printf '%s\n' "$object_files" | \
     awk 'NR == 1 { print; exit }')
 test -z "$outside_object" \
     || fail "generated object is outside root build: $outside_object"

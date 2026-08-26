@@ -30,3 +30,4 @@ expect_no_c_tests() {
 expect_no_c_tests "$work/empty" empty
 : >"$work/empty/test_not_executable"
 expect_no_c_tests "$work/empty" non-executable
+sh "$root/tests/scripts/test_layout_fail_closed.sh"
