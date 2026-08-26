@@ -1,7 +1,7 @@
 mainmenu "RT-Thread Configuration"
 
 BSP_DIR := src/platform/board/stm32f103c8
-RTT_DIR := rt-thread
+RTT_DIR := vendor/rt-thread
 
 config SOC_STM32F103C8
     bool

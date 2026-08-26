@@ -4,7 +4,7 @@ import sys
 import rtconfig
 from SCons.Builder import ListEmitter
 
-RTT_ROOT = os.getenv('RTT_ROOT', os.path.join(os.getcwd(), 'rt-thread'))
+RTT_ROOT = os.getenv('RTT_ROOT', os.path.join(os.getcwd(), 'vendor', 'rt-thread'))
 sys.path.append(os.path.join(RTT_ROOT, 'tools'))
 from building import *
 

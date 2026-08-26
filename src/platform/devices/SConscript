@@ -10,7 +10,7 @@ hardware_paths = [
     Dir('#packages/CMSIS-Core-latest/Include').abspath,
     Dir('#packages/stm32f1_cmsis_driver-latest/Include').abspath,
     Dir('#packages/stm32f1_hal_driver-latest/Inc').abspath,
-    Dir('#rt-thread/include').abspath,
+    Dir('#vendor/rt-thread/include').abspath,
 ]
 device_env = env.Clone(BUILDERS={})
 device_env.Tool('cc')

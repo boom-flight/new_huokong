@@ -15,6 +15,8 @@ grep -q 'build/firmware/huokong.map' rtconfig.py || fail 'map path is not centra
 test ! -d board || fail 'old board/ directory still exists'
 test ! -d applications || fail 'old applications/ directory still exists'
 test ! -e libraries/Kconfig || fail 'old libraries/Kconfig still exists'
+test -f vendor/rt-thread/tools/building.py || fail 'missing vendored RT-Thread build entry point'
+test ! -d rt-thread || fail 'root rt-thread/ compatibility directory still exists'
 
 test -f src/app/main.c || fail 'missing src/app/main.c'
 test -f src/app/SConscript || fail 'missing src/app/SConscript'
