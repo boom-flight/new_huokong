@@ -12,6 +12,7 @@ from building import *
 def bsp_pkg_check():
     required = [
         'vendor/cmsis-core',
+        'vendor/rt-thread-stm32-drivers',
         'vendor/stm32f1-cmsis',
         'vendor/stm32f1-hal',
     ]
@@ -66,8 +67,8 @@ Export('RTT_ROOT')
 Export('rtconfig')
 
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu=False)
-objs.extend(SConscript('libraries/HAL_Drivers/SConscript',
-                       variant_dir='build/libraries/HAL_Drivers', duplicate=0))
+objs.extend(SConscript('vendor/rt-thread-stm32-drivers/SConscript',
+                       variant_dir='build/vendor/rt-thread-stm32-drivers', duplicate=0))
 
 direct_hal = [
     'vendor/stm32f1-hal/Src/stm32f1xx_hal_spi.c',

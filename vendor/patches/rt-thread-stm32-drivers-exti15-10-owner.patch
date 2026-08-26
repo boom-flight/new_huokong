@@ -1,0 +1,19 @@
+diff --git a/drivers/drv_gpio.c b/drivers/drv_gpio.c
+index 1a6a294..4133b8c 100644
+--- a/drivers/drv_gpio.c
++++ b/drivers/drv_gpio.c
+@@ -750,12 +750,14 @@ void EXTI15_10_IRQHandler(void)
++#ifndef BSP_GPIO_EXTI15_10_EXTERNAL
+ void EXTI15_10_IRQHandler(void)
+ {
+     rt_interrupt_enter();
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
+     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+     rt_interrupt_leave();
+ }
++#endif
+ #endif

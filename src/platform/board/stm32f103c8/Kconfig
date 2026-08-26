@@ -267,7 +267,7 @@ menu "On-chip Peripheral Drivers"
         select RT_USING_USB_DEVICE
         default n
 
-    source "libraries/HAL_Drivers/drivers/Kconfig"
+    source "vendor/rt-thread-stm32-drivers/drivers/Kconfig"
 
     config BSP_GPIO_EXTI15_10_EXTERNAL
         bool

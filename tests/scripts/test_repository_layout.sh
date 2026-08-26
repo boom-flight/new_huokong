@@ -20,6 +20,14 @@ test ! -d rt-thread || fail 'root rt-thread/ compatibility directory still exist
 test -d vendor/cmsis-core || fail 'missing vendored CMSIS-Core snapshot'
 test -d vendor/stm32f1-cmsis || fail 'missing vendored STM32F1 CMSIS snapshot'
 test -d vendor/stm32f1-hal || fail 'missing vendored STM32F1 HAL snapshot'
+stm32_driver_root=vendor/rt-thread-stm32-drivers
+stm32_driver_patch=vendor/patches/rt-thread-stm32-drivers-exti15-10-owner.patch
+test -f "$stm32_driver_root/SConscript" \
+    || fail 'missing vendored RT-Thread STM32 driver snapshot'
+test -f "$stm32_driver_patch" \
+    || fail 'missing RT-Thread STM32 driver EXTI ownership patch'
+test ! -d libraries/HAL_Drivers \
+    || fail 'old libraries/HAL_Drivers directory still exists'
 test -f vendor/manifest.md || fail 'missing vendor provenance manifest'
 test ! -d packages || fail 'root packages/ directory still exists'
 
@@ -41,6 +49,30 @@ grep -Fq 'rsource "$(BSP_DIR)/soc/Kconfig"' Kconfig \
     || fail 'root Kconfig does not include the board SoC Kconfig'
 grep -Fq 'rsource "$(BSP_DIR)/Kconfig"' Kconfig \
     || fail 'root Kconfig does not include the board Kconfig'
+grep -Fq 'source "vendor/rt-thread-stm32-drivers/drivers/Kconfig"' \
+    "$board_root/Kconfig" \
+    || fail 'board Kconfig does not include the vendored STM32 drivers'
+grep -Fq 'CONFIG_BSP_GPIO_EXTI15_10_EXTERNAL=y' .config \
+    || fail 'external EXTI15_10 ownership is not enabled'
+stm32_gpio_driver="$stm32_driver_root/drivers/drv_gpio.c"
+guarded_exti_handler=$(awk '
+    /^#ifndef BSP_GPIO_EXTI15_10_EXTERNAL$/ { in_guard = 1 }
+    in_guard { print }
+    in_guard && /^#endif$/ { exit }
+' "$stm32_gpio_driver")
+for required_line in \
+    '#ifndef BSP_GPIO_EXTI15_10_EXTERNAL' \
+    'void EXTI15_10_IRQHandler(void)' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);' \
+    'HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);' \
+    '#endif'; do
+    printf '%s\n' "$guarded_exti_handler" | grep -Fq "$required_line" \
+        || fail "STM32 GPIO driver guard is incomplete: $required_line"
+done
 grep -Fq -- '-T src/platform/board/stm32f103c8/linker_scripts/link.lds' rtconfig.py \
     || fail 'rtconfig.py has the wrong linker path'
 

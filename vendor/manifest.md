@@ -12,6 +12,19 @@
 - 目标路径：`vendor/rt-thread/`
 - 补丁状态：无；快照内容未修改
 
+## RT-Thread STM32 通用驱动
+
+- 上游地址：<https://github.com/RT-Thread/rt-thread>
+- 固定版本：`ddf52e2cdd977f14fc04035c88672ac204aec713`
+- 许可证：Apache License 2.0，见上游根目录 `LICENSE` 和源码 SPDX 标识
+- 上游原始路径：`bsp/stm32/libraries/HAL_Drivers/`
+- 迁移前仓库路径：`libraries/HAL_Drivers/`
+- 目标路径：`vendor/rt-thread-stm32-drivers/`
+- 补丁文件：`vendor/patches/rt-thread-stm32-drivers-exti15-10-owner.patch`
+- 补丁状态：已应用
+- 补丁目的：当 `BSP_GPIO_EXTI15_10_EXTERNAL=y` 时不定义通用 `EXTI15_10_IRQHandler`，保留通用 `HAL_GPIO_EXTI_Callback` 并由板级 BMI088 适配器拥有中断入口
+- 重放命令：`patch -d vendor/rt-thread-stm32-drivers -p1 < vendor/patches/rt-thread-stm32-drivers-exti15-10-owner.patch`
+
 ## CMSIS-Core
 
 - 上游地址：<https://github.com/RT-Thread-packages/CMSIS-Core>
