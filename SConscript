@@ -19,7 +19,9 @@ scripts = [
     board_script,
     'src/modules/timing/SConscript',
     'src/modules/transport/SConscript',
-    'packages/SConscript',
+    'vendor/cmsis-core/SConscript',
+    'vendor/stm32f1-cmsis/SConscript',
+    'vendor/stm32f1-hal/SConscript',
 ]
 
 for script in scripts:

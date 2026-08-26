@@ -11,9 +11,9 @@ from building import *
 
 def bsp_pkg_check():
     required = [
-        'packages/CMSIS-Core-latest',
-        'packages/stm32f1_cmsis_driver-latest',
-        'packages/stm32f1_hal_driver-latest',
+        'vendor/cmsis-core',
+        'vendor/stm32f1-cmsis',
+        'vendor/stm32f1-hal',
     ]
     if not all(os.path.isdir(path) for path in required):
         print('Vendored dependency package is missing; restore the pinned source snapshot.')
@@ -70,12 +70,12 @@ objs.extend(SConscript('libraries/HAL_Drivers/SConscript',
                        variant_dir='build/libraries/HAL_Drivers', duplicate=0))
 
 direct_hal = [
-    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_spi.c',
-    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_tim.c',
-    'packages/stm32f1_hal_driver-latest/Src/stm32f1xx_hal_tim_ex.c',
+    'vendor/stm32f1-hal/Src/stm32f1xx_hal_spi.c',
+    'vendor/stm32f1-hal/Src/stm32f1xx_hal_tim.c',
+    'vendor/stm32f1-hal/Src/stm32f1xx_hal_tim_ex.c',
 ]
 objs.extend(DefineGroup('Direct HAL', direct_hal, depend=[''],
-    CPPPATH=['packages/stm32f1_hal_driver-latest/Inc'],
+    CPPPATH=['vendor/stm32f1-hal/Inc'],
     CPPDEFINES=['USE_HAL_DRIVER']))
 
 DoBuilding(TARGET, objs)

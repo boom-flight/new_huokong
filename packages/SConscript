@@ -1,8 +1,0 @@
-from building import *
-
-objs = []
-objs += SConscript('CMSIS-Core-latest/SConscript')
-objs += SConscript('stm32f1_cmsis_driver-latest/SConscript')
-objs += SConscript('stm32f1_hal_driver-latest/SConscript')
-
-Return('objs')
