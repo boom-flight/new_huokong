@@ -36,7 +36,7 @@ vendor/
 
 - `app` 是唯一装配入口，只决定初始化顺序、连接依赖并启动服务，不保存传感器策略或协议编码逻辑。
 - `kernel` 拥有长期运行流程。当前 `imu` 内核管理采集、校准、姿态状态和恢复，`telemetry` 内核管理 200 Hz 调度、序号、丢帧状态和发送。
-- `modules` 保存输入输出明确、可在主机独立测试的实现，包括姿态数学、BMI088 寄存器访问、32 字节协议编码、计时扩展和 DMA 发送状态机。
+- `modules` 保存输入输出明确、可在主机独立测试的实现，包括姿态数学、BMI088 寄存器访问、40 字节协议编码、计时扩展和 DMA 发送状态机。
 - `platform` 保存 STM32F103C8 板级实现、具体外设、IRQ、HAL 回调和时间/传输适配器。
 - `vendor` 保存固定版本的 RT-Thread、CMSIS、STM32 HAL 和通用 STM32 驱动快照；来源、版本和本地补丁记录在 `vendor/manifest.md`。
 
@@ -44,14 +44,18 @@ vendor/
 
 ## 运行关系
 
-启动入口先初始化 IMU 服务，再启动遥测服务。IMU 服务通过平台适配器接收 BMI088 数据就绪事件，发布不可变快照；遥测服务读取快照，调用纯协议编码器，再通过 USART2 DMA 适配器发送。平台适配器拥有全部硬件句柄、中断和 HAL 回调，内核不直接拥有寄存器级外设状态。
+按当前 `src/app/main.c`，启动入口实际先初始化 telemetry 服务，再初始化 IMU 服务；IMU 初始化失败时回滚已经启动的 telemetry。该顺序与计划中的“先 IMU 后 telemetry”描述不一致，本仓库当前源码和测试是事实来源，本次文档整理不改变它。启动失败路径按子资源先于父对象的顺序释放已创建资源；停止时等待线程退出失败会返回失败，不把停止报告为成功。当前 `telemetry_service.c` 忽略 `rt_thread_detach()` 返回值，`imu_service.c` 也未把 event/deinit 清理返回值完整纳入结果，因此不能声称所有底层清理失败都保留可重试状态。
 
-编译产物集中在 `build/`。固件、主机测试、编译数据库和 SCons 状态分别写入固定子目录，不在源码目录或仓库根目录生成对象和镜像。
+IMU 服务通过 BMI088 平台适配器接收 DRDY 事件并发布不可变快照；遥测服务读取快照，调用纯协议编码器，再通过 USART2 DMA 适配器发送。SPI 读取在传输前后各取得一次 DRDY latch；若 sequence 在读取期间变化，则拒绝本次样本，并保留 `IMU_STATUS_EVENT_OVERRUN` 和相应 overrun 诊断计数，而不发布过期或不一致的数据。平台适配器拥有全部硬件句柄、中断和 HAL 回调，内核不直接拥有寄存器级外设状态。
+
+遥测每 5 个 RT-Thread tick 尝试一次发送。UART 适配器分别报告 DMA busy、同步 DMA 启动失败和异步 UART 错误；三者都会被遥测策略作为丢帧处理，序号按每次尝试消耗，粘滞丢帧状态由后续成功排队清除。
+
+编译产物集中在 `build/`。固件、主机测试、编译数据库和 SCons 状态分别写入固定子目录；SCons 固定使用仓库内 `vendor/rt-thread/`，编译数据库固定为 `build/scons/compile_commands.json`，不在源码目录或仓库根目录生成对象和镜像。
 
 ## 延伸文档
 
 - [依赖规则](dependency-rules.md)
 - [构建、测试与调试](../development/build-test-debug.md)
 - [固件行为需求](../requirements/firmware-behavior.md)
-- [IMU 遥测协议 v1](../protocols/imu-telemetry-v1.md)
+- [IMU 遥测协议 v2](../protocols/imu-telemetry-v2.md)
 - [硬件验收记录](../hardware/acceptance.md)

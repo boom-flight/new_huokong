@@ -1,16 +1,19 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 kernel_root = Dir('#src/kernel').abspath
 module_root = Dir('#src/modules').abspath
 device_root = Dir('#src/modules/devices').abspath
 platform_root = Dir('#src/platform').abspath
+settings = manifest_group_settings(manifest, 'kernel', root=Dir('#').abspath)
 
 policy_env = env.Clone(BUILDERS={})
 policy_env.Tool('cc')
 policy_env.Replace(
     CFLAGS=env['CFLAGS'],
-    CPPPATH=[kernel_root, module_root, device_root],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
 )
 policy_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
@@ -20,12 +23,13 @@ service_group = DefineGroup(
     'IMU Service',
     ['imu_service.c'],
     depend=[''],
-    CPPPATH=[kernel_root, module_root],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
     LOCAL_CPPPATH=[device_root, platform_root],
     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
 )
 policy_objects = policy_env.Object(
-    target='#build/firmware/kernel/imu/imu_policy',
+    target='#build/scons/firmware/kernel/imu/imu_policy',
     source='imu_policy.c',
 )
 policy_group = DefineGroup('IMU Policy', policy_objects, depend=[''])

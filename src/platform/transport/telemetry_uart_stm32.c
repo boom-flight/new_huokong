@@ -1,3 +1,9 @@
+/**
+ * @file telemetry_uart_stm32.c
+ * @brief 基于 STM32 HAL 和 DMA 的遥测 UART 发送实现。
+ * @note 本文件仅实现 USART2 TX；发送使用 DMA1 通道 7，TX 引脚为 PA2。
+ */
+
 #include "telemetry_uart_stm32.h"
 
 #include "main.h"
@@ -6,14 +12,20 @@
 #include <rtthread.h>
 
 enum {
-    TELEMETRY_FRAME_SIZE = 32u,
+    /** @brief 适配器接受的固定遥测帧长度，单位为字节。 */
+    TELEMETRY_FRAME_SIZE = 40u,
 };
 
+/** @brief UART、DMA 句柄及其发送状态，仅由本适配器持有。 */
 static UART_HandleTypeDef huart2;
 static DMA_HandleTypeDef hdma_usart2_tx;
 static dma_tx_state_t telemetry_dma_state;
 static bool uart_initialized;
 
+/**
+ * @brief 保存当前中断屏蔽状态并临时关闭中断。
+ * @return 调用前的 PRIMASK 值，供 leave_critical() 恢复。
+ */
 static uint32_t enter_critical(void)
 {
     const uint32_t primask = __get_PRIMASK();
@@ -22,11 +34,19 @@ static uint32_t enter_critical(void)
     return primask;
 }
 
+/**
+ * @brief 恢复进入临界区前的中断屏蔽状态。
+ * @param primask enter_critical() 返回的 PRIMASK 值。
+ */
 static void leave_critical(uint32_t primask)
 {
     __set_PRIMASK(primask);
 }
 
+/**
+ * @brief 回滚 UART 初始化并清除 DMA、IRQ 和发送状态。
+ * @note 该函数同时用于初始化失败路径和显式反初始化。
+ */
 static void cleanup_uart(void)
 {
     uart_initialized = false;
@@ -49,6 +69,11 @@ static void cleanup_uart(void)
     hdma_usart2_tx = (DMA_HandleTypeDef){0};
 }
 
+/**
+ * @brief 初始化 USART2 TX、DMA1 通道 7 及对应中断。
+ * @return 初始化成功或已完成初始化时返回 true，否则返回 false。
+ * @note 初始化失败时会通过 cleanup_uart() 清理部分已创建的资源。
+ */
 bool telemetry_uart_stm32_init(void)
 {
     GPIO_InitTypeDef gpio = {0};
@@ -103,58 +128,59 @@ bool telemetry_uart_stm32_init(void)
     return true;
 }
 
+/**
+ * @brief 关闭 USART2 DMA 发送适配器。
+ */
 void telemetry_uart_stm32_deinit(void)
 {
     cleanup_uart();
 }
 
-bool telemetry_uart_stm32_try_start(const uint8_t *frame, size_t length)
+/**
+ * @brief 启动固定长度遥测帧的异步发送。
+ * @param frame 待发送的帧缓冲区。
+ * @param length 帧长度，必须为 TELEMETRY_FRAME_SIZE。
+ * @return 发送启动结果，见 telemetry_uart_send_result_t。
+ * @note 发送占用由 dma_tx_state_t 串行化，DMA 完成或错误回调负责释放状态。
+ */
+telemetry_uart_send_result_t telemetry_uart_stm32_send(const uint8_t *frame,
+                                                       size_t length)
 {
     uint32_t primask;
 
     if (frame == NULL || length != TELEMETRY_FRAME_SIZE) {
-        return false;
+        return TELEMETRY_UART_SEND_START_FAILED;
     }
     primask = enter_critical();
     if (!uart_initialized || huart2.Instance != USART2 ||
-        hdma_usart2_tx.Instance != DMA1_Channel7 ||
-        !dma_tx_state_reserve(&telemetry_dma_state)) {
+        hdma_usart2_tx.Instance != DMA1_Channel7) {
         leave_critical(primask);
-        return false;
+        return TELEMETRY_UART_SEND_START_FAILED;
+    }
+    if (dma_tx_state_take_failure(&telemetry_dma_state)) {
+        leave_critical(primask);
+        return TELEMETRY_UART_SEND_ASYNC_ERROR;
+    }
+    if (!dma_tx_state_reserve(&telemetry_dma_state)) {
+        leave_critical(primask);
+        return TELEMETRY_UART_SEND_BUSY;
     }
     leave_critical(primask);
 
     if (HAL_UART_Transmit_DMA(&huart2, (uint8_t *)frame,
                               (uint16_t)length) != HAL_OK) {
         primask = enter_critical();
-        dma_tx_state_cancel(&telemetry_dma_state);
+        dma_tx_state_release(&telemetry_dma_state);
         leave_critical(primask);
-        return false;
+        return TELEMETRY_UART_SEND_START_FAILED;
     }
-    return true;
+    return TELEMETRY_UART_SEND_STARTED;
 }
 
-bool telemetry_uart_stm32_busy(void)
-{
-    bool busy;
-    const uint32_t primask = enter_critical();
-
-    busy = uart_initialized && dma_tx_state_busy(&telemetry_dma_state);
-    leave_critical(primask);
-    return busy;
-}
-
-bool telemetry_uart_stm32_take_failure(void)
-{
-    bool failed;
-    const uint32_t primask = enter_critical();
-
-    failed = uart_initialized &&
-             dma_tx_state_take_failure(&telemetry_dma_state);
-    leave_critical(primask);
-    return failed;
-}
-
+/**
+ * @brief 处理 DMA1 通道 7 中断并转交 STM32 HAL。
+ * @note 该函数运行在 RT-Thread 中断上下文中。
+ */
 void DMA1_Channel7_IRQHandler(void)
 {
     rt_interrupt_enter();
@@ -164,6 +190,10 @@ void DMA1_Channel7_IRQHandler(void)
     rt_interrupt_leave();
 }
 
+/**
+ * @brief 处理 USART2 中断并转交 STM32 HAL。
+ * @note 该函数运行在 RT-Thread 中断上下文中。
+ */
 void USART2_IRQHandler(void)
 {
     rt_interrupt_enter();
@@ -173,16 +203,26 @@ void USART2_IRQHandler(void)
     rt_interrupt_leave();
 }
 
+/**
+ * @brief 处理 UART DMA 发送完成回调。
+ * @param huart 触发回调的 UART 句柄。
+ * @note 仅接受 USART2 的回调，并释放对应的发送占用状态。
+ */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     const uint32_t primask = enter_critical();
 
     if (uart_initialized && huart != NULL && huart->Instance == USART2) {
-        dma_tx_state_complete(&telemetry_dma_state);
+        dma_tx_state_release(&telemetry_dma_state);
     }
     leave_critical(primask);
 }
 
+/**
+ * @brief 处理 UART 异步错误回调。
+ * @param huart 触发回调的 UART 句柄。
+ * @note 仅接受 USART2 的回调，并记录错误供后续发送请求读取。
+ */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     const uint32_t primask = enter_critical();

@@ -1,16 +1,22 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 module_root = Dir('#src/modules').abspath
+settings = manifest_group_settings(manifest, 'modules', root=Dir('#').abspath)
 bmi088_env = env.Clone(BUILDERS={})
 bmi088_env.Tool('cc')
-bmi088_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+bmi088_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 bmi088_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     bmi088_env.Tool('compilation_db')
 
 bmi088_objects = bmi088_env.Object(
-    target='#build/firmware/modules/devices/bmi088/bmi088',
+    target='#build/scons/firmware/objects/modules/devices/bmi088/bmi088',
     source='bmi088.c',
 )
 bmi088_group = DefineGroup('BMI088', bmi088_objects, depend=[''])

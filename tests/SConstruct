@@ -15,10 +15,10 @@ def host_test(name, sources, include_paths):
     test_env.AppendUnique(CPPPATH=include_paths)
     objects = []
     for index, source in enumerate(sources):
-        target = 'build/host-tests/obj/{}/{}'.format(name, index)
+        target = 'build/scons/host-tests/obj/{}/{}'.format(name, index)
         objects.append(test_env.Object(target=target, source=source))
     return test_env.Program(
-        target='build/host-tests/' + name,
+        target='build/scons/host-tests/' + name,
         source=objects,
     )
 
@@ -28,6 +28,17 @@ protocol_include_paths = ['src/modules/protocols'] + module_include_paths
 device_include_paths = ['src/modules/devices'] + module_include_paths
 bmi088_test_include_paths = ['tests/fakes'] + device_include_paths
 imu_policy_include_paths = ['src/kernel'] + device_include_paths
+imu_log_event_include_paths = [
+    'src/kernel', 'src/modules/devices', 'src/modules'
+]
+logging_test_include_paths = [
+    'tests/fakes', 'src/kernel', 'src/modules', 'src/modules/devices'
+]
+logging_service_sources = [
+    'src/kernel/logging/imu_log_service.c',
+    'src/kernel/logging/imu_log_event.c',
+    'tests/fakes/fake_rtthread_log.c',
+]
 
 test_timestamp_extender = host_test(
     'test_timestamp_extender',
@@ -91,6 +102,45 @@ test_imu_policy = host_test(
     imu_policy_include_paths,
 )
 Alias('test_imu_policy', test_imu_policy)
+
+test_service_lifecycle = host_test(
+    'test_service_lifecycle',
+    ['tests/kernel/test_service_lifecycle.c'],
+    ['tests/fakes', 'src/kernel'],
+)
+Alias('test_service_lifecycle', test_service_lifecycle)
+
+test_imu_log_event = host_test(
+    'test_imu_log_event',
+    [
+        'tests/kernel/logging/test_imu_log_event.c',
+        'src/kernel/logging/imu_log_event.c',
+    ],
+    imu_log_event_include_paths,
+)
+Alias('test_imu_log_event', test_imu_log_event)
+
+test_imu_log_service = host_test(
+    'test_imu_log_service',
+    ['tests/kernel/logging/test_imu_log_service.c'] + logging_service_sources,
+    logging_test_include_paths,
+)
+Alias('test_imu_log_service', test_imu_log_service)
+
+test_imu_log_service_failure = host_test(
+    'test_imu_log_service_failure',
+    ['tests/kernel/logging/test_imu_log_service_failure.c'] + logging_service_sources,
+    logging_test_include_paths,
+)
+Alias('test_imu_log_service_failure', test_imu_log_service_failure)
+
+test_imu_log_service_startup_failure = host_test(
+    'test_imu_log_service_startup_failure',
+    ['tests/kernel/logging/test_imu_log_service_startup_failure.c']
+    + logging_service_sources,
+    logging_test_include_paths,
+)
+Alias('test_imu_log_service_startup_failure', test_imu_log_service_startup_failure)
 
 test_telemetry_policy = host_test(
     'test_telemetry_policy',

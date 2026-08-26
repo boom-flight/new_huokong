@@ -68,7 +68,7 @@ PB12 与 PB14 共用 `EXTI15_10_IRQn`。中断在下降沿锁存微秒时间戳�
 
 用于姿态修正的加速度样本必须与已消费序号一致、相对陀螺仪不超过 5000 us，且模长在 0.7..1.3 g 内；否则只禁用该次加速度修正，不阻止合规陀螺仪积分。
 
-状态 LED 模式为：初始化 100 ms 亮/900 ms 灭；校准 100 ms 亮/100 ms 灭；运行 100 ms 亮/1900 ms 灭；故障为 100 ms 亮、100 ms 灭、100 ms 亮、700 ms 灭的双闪周期。诊断计数每秒输出到控制台。
+状态 LED 模式为：初始化 100 ms 亮/900 ms 灭；校准 100 ms 亮/100 ms 灭；运行 100 ms 亮/1900 ms 灭；故障为 100 ms 亮、100 ms 灭、100 ms 亮、700 ms 灭的双闪周期。诊断计数每秒异步放入日志队列，由低优先级 logger 线程输出到控制台；UART 背压不能阻塞 BMI088 处理，日志队列满时允许丢弃日志，并保留 `spi`、`accel_overrun`、`gyro_overrun`、`rejected_dt`、`long_gap`、`telemetry_drop` 和 `reinit` 字段。
 
 ## 线程与中断优先级
 
@@ -77,11 +77,12 @@ PB12 与 PB14 共用 `EXTI15_10_IRQn`。中断在下降沿锁存微秒时间戳�
 | IMU 线程 | 5 | 768 bytes | 10 ticks |
 | RT-Thread main 线程 | 10 | 512 bytes | 由 RT-Thread 配置管理 |
 | telemetry 线程 | 15 | 512 bytes | 10 ticks |
+| logger 线程 | 20 | 512 bytes | 10 ticks |
 
 RT-Thread 当前使用 32 级优先级和 1000 Hz tick。`EXTI15_10_IRQn` 与 `TIM2_IRQn` 的 NVIC preemption priority 为 5、subpriority 为 0；`DMA1_Channel7_IRQn` 与 `USART2_IRQn` 为 6、0。
 
 ## 遥测行为
 
-遥测线程每 5 ticks 调度一次，即 200 Hz。它读取双缓冲 IMU 快照，编码固定 32 字节 v1 帧，并通过 USART2 DMA 发送；发送缓冲区只在排队成功后切换。UART 忙、同步 DMA 启动失败或异步 UART 错误都会累计丢帧并设置粘滞状态，后续帧通过状态位和序号间隙报告。
+遥测线程每 5 ticks 调度一次，即 200 Hz。它读取双缓冲 IMU 快照，编码固定 40 字节 v2 帧，并通过 USART2 DMA 发送；帧包含四元数以及欧拉角、三轴角速度和三轴加速度。发送缓冲区只在排队成功后切换。UART 忙、同步 DMA 启动失败或异步 UART 错误都会累计丢帧并设置粘滞状态，后续帧通过状态位和序号间隙报告。
 
-帧的每个偏移、缩放、状态位和 CRC 见[IMU 遥测协议 v1](../protocols/imu-telemetry-v1.md)。
+帧的每个偏移、缩放、状态位和 CRC 见[IMU 遥测协议 v2](../protocols/imu-telemetry-v2.md)。当前欧拉角字段保持 `roll, pitch, yaw` 语义；`yaw` 仍为相对偏航，不能消除偏航漂移。

@@ -2,7 +2,7 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-work="$root/build/tests/check-size-test"
+work="$root/build/scons/test-fixtures/check-size-test"
 default_linker=src/platform/board/stm32f103c8/linker_scripts/link.lds
 
 grep -Fq "linker_script=\${LINKER_SCRIPT:-$default_linker}" \

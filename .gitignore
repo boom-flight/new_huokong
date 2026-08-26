@@ -39,6 +39,9 @@ packages/pkgs_error.json
 *.uvoptx
 DebugConfig/
 RTE/
+Objects/
+Listings/
+Database/
 EventRecorderStub.scvd
 JLinkLog.txt
 JLinkSettings.ini

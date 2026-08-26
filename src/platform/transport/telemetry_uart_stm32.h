@@ -1,3 +1,9 @@
+/**
+ * @file telemetry_uart_stm32.h
+ * @brief STM32 遥测 UART DMA 发送适配器的公开接口。
+ * @note 当前适配 STM32F103C8 的 USART2 TX 和 DMA1 通道 7。
+ */
+
 #ifndef TELEMETRY_UART_STM32_H
 #define TELEMETRY_UART_STM32_H
 
@@ -5,10 +11,38 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** @brief 一次遥测帧发送请求的启动或异步状态。 */
+typedef enum {
+    /** @brief DMA 发送已成功启动。 */
+    TELEMETRY_UART_SEND_STARTED,
+    /** @brief UART DMA 当前已有发送任务。 */
+    TELEMETRY_UART_SEND_BUSY,
+    /** @brief 发送未能启动。 */
+    TELEMETRY_UART_SEND_START_FAILED,
+    /** @brief 上一次 DMA 发送发生了异步错误。 */
+    TELEMETRY_UART_SEND_ASYNC_ERROR,
+} telemetry_uart_send_result_t;
+
+/**
+ * @brief 初始化遥测 UART 及其 DMA/IRQ 资源。
+ * @return 初始化成功或已完成初始化时返回 true，否则返回 false。
+ * @note 函数具有幂等性；初始化失败时会释放已申请的硬件资源。
+ */
 bool telemetry_uart_stm32_init(void);
+
+/**
+ * @brief 关闭遥测 UART 并清理 DMA、IRQ 和发送状态。
+ */
 void telemetry_uart_stm32_deinit(void);
-bool telemetry_uart_stm32_try_start(const uint8_t *frame, size_t length);
-bool telemetry_uart_stm32_busy(void);
-bool telemetry_uart_stm32_take_failure(void);
+
+/**
+ * @brief 启动一帧遥测数据的异步 DMA 发送。
+ * @param frame 待发送的完整遥测帧缓冲区。
+ * @param length 帧长度，必须等于适配器要求的固定帧长度。
+ * @return 发送启动结果，见 telemetry_uart_send_result_t。
+ * @note 调用者必须保证 frame 在异步发送完成前保持有效且内容不变。
+ */
+telemetry_uart_send_result_t telemetry_uart_stm32_send(const uint8_t *frame,
+                                                       size_t length);
 
 #endif

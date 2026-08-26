@@ -1,3 +1,8 @@
+/**
+ * @file telemetry_policy.c
+ * @brief 遥测发送序列号和丢弃粘滞状态的策略实现。
+ */
+
 #include "telemetry/telemetry_policy.h"
 
 uint16_t telemetry_attempt_begin(telemetry_attempt_state_t *state)
@@ -10,7 +15,6 @@ uint16_t telemetry_attempt_begin(telemetry_attempt_state_t *state)
 
 void telemetry_attempt_dropped(telemetry_attempt_state_t *state)
 {
-    ++state->drops;
     state->drop_sticky = true;
 }
 

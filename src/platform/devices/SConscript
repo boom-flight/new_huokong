@@ -1,30 +1,24 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 platform_root = Dir('#src/platform').abspath
 module_root = Dir('#src/modules').abspath
 device_root = Dir('#src/modules/devices').abspath
-hardware_paths = [
-    Dir('#').abspath,
-    Dir('#src/platform/board/stm32f103c8/CubeMX_Config/Inc').abspath,
-    Dir('#vendor/cmsis-core/Include').abspath,
-    Dir('#vendor/stm32f1-cmsis/Include').abspath,
-    Dir('#vendor/stm32f1-hal/Inc').abspath,
-    Dir('#vendor/rt-thread/include').abspath,
-]
+settings = manifest_group_settings(manifest, 'platform', root=Dir('#').abspath)
 device_env = env.Clone(BUILDERS={})
 device_env.Tool('cc')
 device_env.Replace(
     CFLAGS=env['CFLAGS'],
-    CPPPATH=hardware_paths + [platform_root, module_root, device_root],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
 )
-device_env.AppendUnique(CPPDEFINES=['USE_HAL_DRIVER', '__RTTHREAD__'])
 device_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     device_env.Tool('compilation_db')
 
 device_objects = device_env.Object(
-    target='#build/firmware/platform/devices/bmi088_stm32',
+    target='#build/scons/firmware/objects/platform/devices/bmi088_stm32',
     source='bmi088_stm32.c',
 )
 device_group = DefineGroup('STM32 BMI088', device_objects, depend=[''])

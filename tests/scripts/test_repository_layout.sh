@@ -7,10 +7,17 @@ fail() {
 }
 
 grep -q 'os.listdir' SConscript && fail 'root SConscript scans directories'
-grep -q "TARGET = os.path.join('build', 'firmware', 'huokong.'" SConstruct \
-    || fail 'firmware target is outside build/firmware'
+grep -q "FIRMWARE_DIR = os.path.join('build', 'scons', 'firmware')" SConstruct \
+    || fail 'firmware target is outside build/scons/firmware'
 grep -q 'SConsignFile' SConstruct || fail 'firmware SCons database is not redirected'
-grep -q 'build/firmware/huokong.map' rtconfig.py || fail 'map path is not centralized'
+grep -q 'build/scons/firmware/huokong.map' rtconfig.py \
+    || fail 'map path is not centralized'
+grep -Fq 'build/scons/host-tests' tests/SConstruct \
+    || fail 'host tests are outside build/scons/host-tests'
+if grep -Eq 'build/firmware|build/host-tests' \
+    tests/SConstruct tools/*.sh .vscode/launch.json docs/development/build-test-debug.md; then
+    fail 'active files reference retired build output paths'
+fi
 
 test ! -d board || fail 'old board/ directory still exists'
 test ! -d applications || fail 'old applications/ directory still exists'
@@ -35,7 +42,7 @@ for document in \
     docs/architecture/overview.md \
     docs/architecture/dependency-rules.md \
     docs/development/build-test-debug.md \
-    docs/protocols/imu-telemetry-v1.md \
+    docs/protocols/imu-telemetry-v2.md \
     docs/requirements/firmware-behavior.md \
     docs/hardware/acceptance.md \
     docs/hardware/source/README.md; do
@@ -46,6 +53,19 @@ grep -Fq '待上板验证' docs/hardware/acceptance.md \
 
 test -f src/app/main.c || fail 'missing src/app/main.c'
 test -f src/app/SConscript || fail 'missing src/app/SConscript'
+test -f project/firmware-manifest.json || fail 'missing firmware manifest'
+test -f project/keil/huokong.uvprojx || fail 'missing Keil project'
+test -f project/keil/stm32f103c8.sct || fail 'missing Keil scatter file'
+test -x tools/generate-keil-project.py || fail 'missing Keil project generator'
+test -x tools/keil-project-check.sh || fail 'missing Keil project check'
+sh tools/keil-project-check.sh || fail 'Keil project check failed'
+for output in build/*; do
+    test -e "$output" || continue
+    case "$output" in
+        build/scons|build/keil) ;;
+        *) fail "build output is outside backend roots: $output" ;;
+    esac
+done
 board_root=src/platform/board/stm32f103c8
 test -f "$board_root/SConscript" || fail 'missing board SConscript'
 test -f "$board_root/Kconfig" || fail 'missing board Kconfig'
@@ -104,6 +124,8 @@ test -x tests/scripts/test_test_runner.sh \
     || fail 'test runner self-test is not under tests/scripts'
 test -x tests/scripts/test_layout_fail_closed.sh \
     || fail 'layout fail-closed self-test is missing'
+test -x tests/scripts/test_build_configuration.sh \
+    || fail 'build configuration gate is missing'
 
 if git grep -nE '\.script/|rt-thread\.elf|rtthread\.bin|rt-thread\.map|tests/build' -- \
     README.md .vscode .devcontainer docs/architecture docs/development \
@@ -131,7 +153,7 @@ test -z "$planned_outside_object" \
     || fail "planned object is outside root build: $planned_outside_object"
 
 if ! object_files=$(find . \
-    \( -path './build' -o -path './.git' -o \
+     \( -path './build' -o -path './.git' -o -path './.worktrees' -o \
        -path './.superpowers/sdd' -o -path './.cache' -o \
        -path './.vendor-cache' -o -path './.cmsis' -o \
        -name __pycache__ \) -prune -o \
@@ -142,3 +164,20 @@ outside_object=$(printf '%s\n' "$object_files" | \
     awk 'NR == 1 { print; exit }')
 test -z "$outside_object" \
     || fail "generated object is outside root build: $outside_object"
+
+if ! generated_artifacts=$(find . \
+     \( -path './build' -o -path './.git' -o -path './.worktrees' -o \
+       -path './.superpowers/sdd' -o -path './.cache' -o \
+       -path './.vendor-cache' -o -path './.cmsis' -o \
+       -name __pycache__ \) -prune -o \
+     -type f \( -name '*.elf' -o -name '*.axf' -o -name '*.bin' -o \
+        -name '*.hex' -o -name '*.map' -o -name '*.dblite' -o \
+        -name '*.d' -o -name '*.dep' -o -name '*.i' -o -name '*.lib' -o \
+        -name '*.out' -o \
+        -name 'compile_commands.json' \) -print); then
+    fail 'cannot scan generated firmware artifacts'
+fi
+outside_artifact=$(printf '%s\n' "$generated_artifacts" | \
+    awk 'NR == 1 { print; exit }')
+test -z "$outside_artifact" \
+    || fail "generated artifact is outside root build: $outside_artifact"

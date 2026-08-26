@@ -17,3 +17,16 @@ if PATH="$work/bin:$PATH" sh "$root/tests/scripts/test_repository_layout.sh" \
     exit 1
 fi
 grep -Fq 'cannot scan generated objects' "$work/output"
+
+cat >"$work/bin/python3" <<'EOF'
+#!/bin/sh
+exit 7
+EOF
+chmod +x "$work/bin/python3"
+
+if PATH="$work/bin:$PATH" sh "$root/tests/scripts/test_repository_layout.sh" \
+    >"$work/python-output" 2>&1; then
+    echo 'expected repository layout check to reject Python validation failure' >&2
+    exit 1
+fi
+grep -Fq 'Keil project check failed' "$work/python-output"

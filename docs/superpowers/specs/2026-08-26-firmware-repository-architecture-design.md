@@ -222,7 +222,7 @@ new_huokong/
 | `.script/` | 改为 `tools/` 下的新命令 |
 | `demand/` | 按用途进入 `docs/requirements/` 和 `docs/hardware/` |
 | 已删除的 `develop_ws/` | 不恢复；在 `docs/archive/stm32f427/README.md` 说明历史资料可从 Git 记录查阅 |
-| 遥测协议文档 | `docs/protocols/imu-telemetry-v1.md` |
+| 遥测协议文档 | `docs/protocols/imu-telemetry-v2.md` |
 | `docs/hardware-acceptance.md` | `docs/hardware/acceptance.md` |
 | `.o`、ELF、BIN、MAP、缓存和测试产物 | 仅在 `build/` 中重新生成 |
 

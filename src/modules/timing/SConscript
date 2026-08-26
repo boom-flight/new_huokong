@@ -1,16 +1,22 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 module_root = Dir('#src/modules').abspath
+settings = manifest_group_settings(manifest, 'modules', root=Dir('#').abspath)
 timing_env = env.Clone(BUILDERS={})
 timing_env.Tool('cc')
-timing_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+timing_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 timing_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     timing_env.Tool('compilation_db')
 
 timing_objects = timing_env.Object(
-    target='#build/firmware/modules/timing/timestamp_extender',
+    target='#build/scons/firmware/objects/modules/timing/timestamp_extender',
     source='timestamp_extender.c',
 )
 timing_group = DefineGroup('Timing', timing_objects, depend=[''])

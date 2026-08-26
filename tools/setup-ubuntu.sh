@@ -6,7 +6,7 @@ set -euo pipefail
 sudo apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     gcc scons gcc-arm-none-eabi libnewlib-arm-none-eabi binutils-arm-none-eabi \
-    gdb-multiarch openocd bear picocom
+    gdb-multiarch openocd bear picocom usbutils
 
 # Ubuntu 没有 arm-none-eabi-gdb 包，做符号链接让 Cortex-Debug 与 tools/debug.sh 直接可用
 command -v arm-none-eabi-gdb >/dev/null || \

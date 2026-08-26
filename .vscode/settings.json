@@ -1,0 +1,7 @@
+{
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build/scons",
+        "--query-driver=/usr/bin/arm-none-eabi-*",
+        "--header-insertion=never"
+    ]
+}

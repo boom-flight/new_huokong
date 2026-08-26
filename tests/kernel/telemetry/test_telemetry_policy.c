@@ -10,21 +10,18 @@ static void test_attempt_sequence_advances_while_drop_stays_sticky_until_queue(v
     assert(telemetry_attempt_begin(&state) == 0u);
     telemetry_attempt_dropped(&state);
     assert(state.next_sequence == 1u);
-    assert(state.drops == 1u);
     assert(state.drop_sticky);
 
     assert(telemetry_attempt_begin(&state) == 1u);
     assert(state.drop_sticky);
     telemetry_attempt_dropped(&state);
     assert(state.next_sequence == 2u);
-    assert(state.drops == 2u);
     assert(state.drop_sticky);
 
     assert(telemetry_attempt_begin(&state) == 2u);
     assert(state.drop_sticky);
     telemetry_attempt_queued(&state);
     assert(state.next_sequence == 3u);
-    assert(state.drops == 2u);
     assert(!state.drop_sticky);
 }
 

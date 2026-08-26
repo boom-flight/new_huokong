@@ -1,19 +1,35 @@
+/**
+ * @file bmi088.c
+ * @brief BMI088 复位、寄存器配置、采样读取和轴变换实现。
+ */
+
 #include "bmi088.h"
 
 enum {
+    /** @brief 每个总线操作的最大尝试次数。 */
     BMI088_ATTEMPTS = 3,
+    /** @brief 加速度计芯片 ID 寄存器地址。 */
     BMI088_ACCEL_CHIP_ID_REG = 0x00,
+    /** @brief 预期的加速度计芯片 ID。 */
     BMI088_ACCEL_CHIP_ID = 0x1E,
+    /** @brief 加速度计三轴数据起始寄存器地址。 */
     BMI088_ACCEL_DATA_REG = 0x12,
+    /** @brief 陀螺仪芯片 ID 寄存器地址。 */
     BMI088_GYRO_CHIP_ID_REG = 0x00,
+    /** @brief 预期的陀螺仪芯片 ID。 */
     BMI088_GYRO_CHIP_ID = 0x0F,
+    /** @brief 陀螺仪三轴数据起始寄存器地址。 */
     BMI088_GYRO_DATA_REG = 0x02,
 };
 
 typedef struct {
+    /** @brief 要配置的 BMI088 子器件。 */
     bmi088_target_t target;
+    /** @brief 要写入的寄存器地址。 */
     uint8_t reg;
+    /** @brief 期望写入并回读的寄存器值。 */
     uint8_t value;
+    /** @brief 写入后生效所需的等待时间，单位为毫秒。 */
     uint32_t settle_ms;
 } bmi088_register_config_t;
 
@@ -36,6 +52,15 @@ static const bmi088_register_config_t gyro_config[] = {
     {BMI088_GYRO, 0x18u, 0x01u, 0u},
 };
 
+/**
+ * @brief 以固定次数重试总线读操作。
+ * @param bus 总线回调集合。
+ * @param target 目标器件。
+ * @param reg 起始寄存器地址。
+ * @param data 接收数据的缓冲区。
+ * @param length 要读取的字节数。
+ * @return 任意一次读取成功时返回 true。
+ */
 static bool read_retry(const bmi088_bus_t *bus, bmi088_target_t target,
                        uint8_t reg, uint8_t *data, size_t length)
 {
@@ -47,6 +72,14 @@ static bool read_retry(const bmi088_bus_t *bus, bmi088_target_t target,
     return false;
 }
 
+/**
+ * @brief 以固定次数重试单寄存器写操作。
+ * @param bus 总线回调集合。
+ * @param target 目标器件。
+ * @param reg 寄存器地址。
+ * @param value 要写入的值。
+ * @return 任意一次写入成功时返回 true。
+ */
 static bool write_retry(const bmi088_bus_t *bus, bmi088_target_t target,
                         uint8_t reg, uint8_t value)
 {
@@ -58,6 +91,12 @@ static bool write_retry(const bmi088_bus_t *bus, bmi088_target_t target,
     return false;
 }
 
+/**
+ * @brief 写入一个配置寄存器并回读校验。
+ * @param bus 总线回调集合。
+ * @param config 待应用的寄存器配置。
+ * @return 配置写入、总线访问或回读校验结果。
+ */
 static bmi088_result_t write_and_verify(
     const bmi088_bus_t *bus, const bmi088_register_config_t *config)
 {
@@ -84,6 +123,13 @@ static bmi088_result_t write_and_verify(
     return mismatched ? BMI088_VERIFY_ERROR : BMI088_BUS_ERROR;
 }
 
+/**
+ * @brief 按顺序应用一组 BMI088 寄存器配置。
+ * @param bus 总线回调集合。
+ * @param config 配置项数组。
+ * @param count 配置项数量。
+ * @return 首个失败配置的结果，全部成功时返回 BMI088_OK。
+ */
 static bmi088_result_t apply_config(
     const bmi088_bus_t *bus, const bmi088_register_config_t *config,
     size_t count)
@@ -187,11 +233,26 @@ bmi088_result_t bmi088_init(bmi088_t *self, bmi088_bus_t bus,
     return BMI088_OK;
 }
 
+/**
+ * @brief 按小端字节序解析一个有符号 16 位采样值。
+ * @param data 指向至少两个字节的小端数据。
+ * @return 解析后的有符号 16 位整数。
+ */
 static int16_t read_i16_le(const uint8_t *data)
 {
     return (int16_t)((uint16_t)data[0] | ((uint16_t)data[1] << 8));
 }
 
+/**
+ * @brief 读取并完成缩放、轴置换及符号变换。
+ * @param self 已初始化的 BMI088 驱动实例。
+ * @param target 目标器件。
+ * @param reg 三轴数据起始寄存器。
+ * @param scale 原始计数到物理单位的缩放因子。
+ * @param raw 原始三轴数据输出指针。
+ * @param converted 机体坐标系下的转换结果输出指针。
+ * @return 读取和转换结果。
+ */
 static bmi088_result_t read_sample(bmi088_t *self, bmi088_target_t target,
                                    uint8_t reg, float scale,
                                    bmi088_raw_sample_t *raw,

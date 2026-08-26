@@ -1,21 +1,27 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 module_root = Dir('#src/modules').abspath
+settings = manifest_group_settings(manifest, 'modules', root=Dir('#').abspath)
 attitude_env = env.Clone(BUILDERS={})
 attitude_env.Tool('cc')
-attitude_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+attitude_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 attitude_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     attitude_env.Tool('compilation_db')
 
 attitude_objects = []
 attitude_objects.extend(attitude_env.Object(
-    target='#build/firmware/modules/attitude/mahony',
+    target='#build/scons/firmware/objects/modules/attitude/mahony',
     source='mahony.c',
 ))
 attitude_objects.extend(attitude_env.Object(
-    target='#build/firmware/modules/attitude/imu_calibration',
+    target='#build/scons/firmware/objects/modules/attitude/imu_calibration',
     source='imu_calibration.c',
 ))
 attitude_group = DefineGroup('Attitude', attitude_objects, depend=[''])

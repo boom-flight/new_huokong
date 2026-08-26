@@ -1,20 +1,41 @@
+/**
+ * @file mahony.c
+ * @brief Mahony 姿态解算、四元数积分和欧拉角转换实现。
+ */
+
 #include "attitude/mahony.h"
 
 #include <math.h>
 #include <stddef.h>
 
+/** @brief 弧度转换为角度的比例因子。 */
 #define RAD_TO_DEG 57.295779513082320876f
 
+/**
+ * @brief 检查三维向量的三个分量是否均为有限值。
+ * @param value 待检查的向量。
+ * @return 三个分量均有限时返回 true。
+ */
 static bool finite_vec(imu_vec3f_t value)
 {
     return isfinite(value.x) && isfinite(value.y) && isfinite(value.z);
 }
 
+/**
+ * @brief 计算三维向量模长的平方。
+ * @param value 待计算的向量。
+ * @return 向量模长的平方。
+ */
 static float vec_norm_squared(imu_vec3f_t value)
 {
     return value.x * value.x + value.y * value.y + value.z * value.z;
 }
 
+/**
+ * @brief 将四元数归一化为单位四元数。
+ * @param q 待原地归一化的四元数。
+ * @return 输入模长有效且归一化结果有限时返回 true。
+ */
 static bool normalize_quaternion(imu_quatf_t *q)
 {
     const float norm_squared = q->w * q->w + q->x * q->x +
@@ -31,6 +52,11 @@ static bool normalize_quaternion(imu_quatf_t *q)
     return isfinite(q->w) && isfinite(q->x) && isfinite(q->y) && isfinite(q->z);
 }
 
+/**
+ * @brief 将数值限制到反三角函数允许的单位区间。
+ * @param value 待限制的数值。
+ * @return 位于 [-1, 1] 区间内的数值。
+ */
 static float clamp_unit(float value)
 {
     if (value > 1.0f) return 1.0f;
@@ -38,6 +64,11 @@ static float clamp_unit(float value)
     return value;
 }
 
+/**
+ * @brief 将角度折返到 [-180, 180) 区间。
+ * @param angle_deg 待折返的角度，单位为度。
+ * @return 折返后的角度，单位为度。
+ */
 static float wrap_deg(float angle_deg)
 {
     float wrapped = fmodf(angle_deg + 180.0f, 360.0f);

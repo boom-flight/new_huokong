@@ -1,25 +1,22 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 module_root = Dir('#src/modules').abspath
-hardware_paths = [
-    Dir('#').abspath,
-    Dir('#src/platform/board/stm32f103c8/CubeMX_Config/Inc').abspath,
-    Dir('#vendor/cmsis-core/Include').abspath,
-    Dir('#vendor/stm32f1-cmsis/Include').abspath,
-    Dir('#vendor/stm32f1-hal/Inc').abspath,
-    Dir('#vendor/rt-thread/include').abspath,
-]
+settings = manifest_group_settings(manifest, 'platform', root=Dir('#').abspath)
 uart_env = env.Clone(BUILDERS={})
 uart_env.Tool('cc')
-uart_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=hardware_paths + [module_root])
-uart_env.AppendUnique(CPPDEFINES=['USE_HAL_DRIVER', '__RTTHREAD__'])
+uart_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 uart_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     uart_env.Tool('compilation_db')
 
 uart_objects = uart_env.Object(
-    target='#build/firmware/platform/transport/telemetry_uart_stm32',
+    target='#build/scons/firmware/objects/platform/transport/telemetry_uart_stm32',
     source='telemetry_uart_stm32.c',
 )
 uart_group = DefineGroup('STM32 Telemetry UART', uart_objects, depend=[''])

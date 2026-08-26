@@ -8,25 +8,25 @@ import sys
 
 EXPECTED_OWNERS = {
     "EXTI15_10_IRQHandler": (
-        "build/firmware/platform/devices/bmi088_stm32.o"
+        "build/scons/firmware/objects/platform/devices/bmi088_stm32.o"
     ),
     "TIM2_IRQHandler": (
-        "build/firmware/platform/time/monotonic_clock_stm32.o"
+        "build/scons/firmware/objects/platform/time/monotonic_clock_stm32.o"
     ),
     "HAL_TIM_PeriodElapsedCallback": (
-        "build/firmware/platform/time/monotonic_clock_stm32.o"
+        "build/scons/firmware/objects/platform/time/monotonic_clock_stm32.o"
     ),
     "DMA1_Channel7_IRQHandler": (
-        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+        "build/scons/firmware/objects/platform/transport/telemetry_uart_stm32.o"
     ),
     "USART2_IRQHandler": (
-        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+        "build/scons/firmware/objects/platform/transport/telemetry_uart_stm32.o"
     ),
     "HAL_UART_TxCpltCallback": (
-        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+        "build/scons/firmware/objects/platform/transport/telemetry_uart_stm32.o"
     ),
     "HAL_UART_ErrorCallback": (
-        "build/firmware/platform/transport/telemetry_uart_stm32.o"
+        "build/scons/firmware/objects/platform/transport/telemetry_uart_stm32.o"
     ),
 }
 REPOSITORY_ROOT = pathlib.Path(__file__).resolve().parents[2]

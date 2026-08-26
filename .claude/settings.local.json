@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '{print $2}')",
+      "Bash(git check-ignore *)",
+      "Bash(git -C /home/noskillzheng/laozhang_project/new_huokong status)",
+      "Bash(git -C /home/noskillzheng/laozhang_project/new_huokong branch -a)",
+      "Bash(git -C /home/noskillzheng/laozhang_project/new_huokong remote -v)",
+      "Bash(gh auth *)",
+      "Bash(gh api *)",
+      "Bash(xargs -0 du -b)",
+      "Bash(gh repo *)",
+      "Bash(bash -n .script/setup-ubuntu.sh)"
+    ]
+  }
+}

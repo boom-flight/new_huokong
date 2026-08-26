@@ -7,7 +7,14 @@
     "containerEnv": { "RTT_EXEC_PATH": "/usr/bin", "RTT_CC": "gcc" },
     "customizations": {
         "vscode": {
-            "settings": { "remote.autoForwardPorts": false },
+            "settings": {
+                "remote.autoForwardPorts": false,
+                "clangd.arguments": [
+                    "--compile-commands-dir=${workspaceFolder}/build/scons",
+                    "--query-driver=/usr/bin/arm-none-eabi-*",
+                    "--header-insertion=never"
+                ]
+            },
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
                 "marus25.cortex-debug"

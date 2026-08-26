@@ -1,6 +1,16 @@
+/**
+ * @file board.c
+ * @brief STM32F103C8 板级系统时钟配置实现。
+ * @note 使用 8 MHz 外部晶振和 PLL 倍频 9，配置系统时钟为 72 MHz。
+ */
+
 #include <board.h>
 #include <drv_common.h>
 
+/**
+ * @brief 配置 HSE、PLL 以及 AHB/APB 总线时钟。
+ * @note APB1 分频为 2（36 MHz），APB2 分频为 1（72 MHz）；HAL 配置失败时进入 Error_Handler()。
+ */
 void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef oscillator = {0};

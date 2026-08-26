@@ -1,3 +1,9 @@
+/**
+ * @file bmi088_stm32.c
+ * @brief BMI088 的 STM32F103C8 SPI 总线和 DRDY 中断适配实现。
+ * @note SPI1 使用 PA5/PA6/PA7，传感器片选使用 PA4/PB13，DRDY 使用 PB12/PB14。
+ */
+
 #include "bmi088_stm32.h"
 
 #include "main.h"
@@ -6,9 +12,11 @@
 #include <rtthread.h>
 
 enum {
+    /** @brief 单次 SPI 事务的 HAL 超时时间，单位为毫秒。 */
     BMI088_SPI_TIMEOUT_MS = 10u,
 };
 
+/** @brief BMI088 SPI 句柄、DRDY 通知目标和硬件锁存状态。 */
 static SPI_HandleTypeDef hspi1;
 static bmi088_drdy_notify_fn drdy_notify;
 static void *drdy_notify_context;
@@ -16,6 +24,10 @@ static volatile bmi088_drdy_latch_t accel_latch;
 static volatile bmi088_drdy_latch_t gyro_latch;
 static bool adapter_initialized;
 
+/**
+ * @brief 回滚适配器初始化并复位外部中断、片选和 DRDY 状态。
+ * @note 该函数用于初始化失败和显式反初始化路径。
+ */
 static void cleanup_adapter(void)
 {
     HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
@@ -38,21 +50,66 @@ static void cleanup_adapter(void)
     hspi1 = (SPI_HandleTypeDef){0};
 }
 
+/**
+ * @brief 返回指定 BMI088 目标的片选 GPIO 端口。
+ * @param target BMI088 加速度计或陀螺仪目标。
+ * @return 目标对应的片选 GPIO 端口。
+ */
 static GPIO_TypeDef *target_cs_port(bmi088_target_t target)
 {
     return target == BMI088_ACCEL ? GPIOB : GPIOA;
 }
 
+/**
+ * @brief 返回指定 BMI088 目标的片选 GPIO 引脚。
+ * @param target BMI088 加速度计或陀螺仪目标。
+ * @return 目标对应的片选 GPIO 引脚。
+ */
 static uint16_t target_cs_pin(bmi088_target_t target)
 {
     return target == BMI088_ACCEL ? GPIO_PIN_13 : GPIO_PIN_4;
 }
 
+/**
+ * @brief 设置指定 BMI088 芯片的片选电平。
+ * @param target BMI088 加速度计或陀螺仪目标。
+ * @param state 片选 GPIO 电平。
+ */
 static void chip_select(bmi088_target_t target, GPIO_PinState state)
 {
     HAL_GPIO_WritePin(target_cs_port(target), target_cs_pin(target), state);
 }
 
+/**
+ * @brief 在中断保护下读取一个 DRDY 锁存值。
+ * @param latch 待读取的易变锁存值。
+ * @return 锁存值；适配器未初始化时返回零值。
+ * @note 读取期间暂时屏蔽硬件中断，避免时间戳和序号被拆分读取。
+ */
+static bmi088_drdy_latch_t read_latch(
+    volatile const bmi088_drdy_latch_t *latch)
+{
+    bmi088_drdy_latch_t result = {0};
+    const rt_base_t level = rt_hw_interrupt_disable();
+
+    if (adapter_initialized) {
+        result.timestamp_us = latch->timestamp_us;
+        result.sequence = latch->sequence;
+    }
+    rt_hw_interrupt_enable(level);
+    return result;
+}
+
+/**
+ * @brief 通过 BMI088 SPI 总线读取寄存器。
+ * @param context 总线上下文，当前实现未使用。
+ * @param target 目标传感器。
+ * @param reg 起始寄存器地址。
+ * @param data 接收缓冲区。
+ * @param length 要读取的字节数。
+ * @return SPI 事务成功返回 true，否则返回 false。
+ * @note 加速度计读取遵循其额外 dummy 字节规则，陀螺仪读取不插入该字节。
+ */
 static bool bus_read(void *context, bmi088_target_t target, uint8_t reg,
                      uint8_t *data, size_t length)
 {
@@ -81,6 +138,14 @@ static bool bus_read(void *context, bmi088_target_t target, uint8_t reg,
     return status == HAL_OK;
 }
 
+/**
+ * @brief 通过 BMI088 SPI 总线写入一个寄存器。
+ * @param context 总线上下文，当前实现未使用。
+ * @param target 目标传感器。
+ * @param reg 目标寄存器地址。
+ * @param value 要写入的寄存器值。
+ * @return SPI 事务成功返回 true，否则返回 false。
+ */
 static bool bus_write(void *context, bmi088_target_t target, uint8_t reg,
                       uint8_t value)
 {
@@ -99,12 +164,21 @@ static bool bus_write(void *context, bmi088_target_t target, uint8_t reg,
     return status == HAL_OK;
 }
 
+/**
+ * @brief 为 BMI088 驱动提供毫秒级线程延时。
+ * @param context 总线上下文，当前实现未使用。
+ * @param delay_ms 延时时间，单位为毫秒。
+ */
 static void bus_delay_ms(void *context, uint32_t delay_ms)
 {
     (void)context;
     rt_thread_mdelay((rt_int32_t)delay_ms);
 }
 
+/**
+ * @brief 初始化 BMI088 SPI1 外设和片选 GPIO。
+ * @return SPI HAL 初始化成功返回 true，否则返回 false。
+ */
 static bool init_spi_gpio(void)
 {
     GPIO_InitTypeDef gpio = {0};
@@ -145,6 +219,10 @@ static bool init_spi_gpio(void)
     return HAL_SPI_Init(&hspi1) == HAL_OK;
 }
 
+/**
+ * @brief 初始化两个 BMI088 DRDY 输入及其外部中断线。
+ * @note PB12 对应加速度计，PB14 对应陀螺仪，均配置为上拉下降沿触发。
+ */
 static void init_exti_gpio(void)
 {
     GPIO_InitTypeDef gpio = {0};
@@ -158,6 +236,13 @@ static void init_exti_gpio(void)
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_12 | GPIO_PIN_14);
 }
 
+/**
+ * @brief 初始化 BMI088 硬件适配器和 DRDY 中断。
+ * @param notify DRDY 事件通知回调，不能为 NULL。
+ * @param context 传递给 notify 的调用上下文。
+ * @return 初始化成功返回 true，否则返回 false。
+ * @note 重复初始化仅在回调和上下文与当前实例一致时成功。
+ */
 bool bmi088_stm32_init(bmi088_drdy_notify_fn notify, void *context)
 {
     if (notify == NULL) {
@@ -184,11 +269,18 @@ bool bmi088_stm32_init(bmi088_drdy_notify_fn notify, void *context)
     return true;
 }
 
+/**
+ * @brief 关闭 BMI088 硬件适配器。
+ */
 void bmi088_stm32_deinit(void)
 {
     cleanup_adapter();
 }
 
+/**
+ * @brief 构造 BMI088 STM32 总线操作表。
+ * @return 当前适配器的 SPI 读写和延时回调集合。
+ */
 bmi088_bus_t bmi088_stm32_bus(void)
 {
     return (bmi088_bus_t){
@@ -199,32 +291,28 @@ bmi088_bus_t bmi088_stm32_bus(void)
     };
 }
 
+/**
+ * @brief 获取加速度计 DRDY 锁存值。
+ * @return 加速度计最近一次 DRDY 的时间戳和序号。
+ */
 bmi088_drdy_latch_t bmi088_stm32_accel_latch(void)
 {
-    bmi088_drdy_latch_t result = {0};
-    const rt_base_t level = rt_hw_interrupt_disable();
-
-    if (adapter_initialized) {
-        result.timestamp_us = accel_latch.timestamp_us;
-        result.sequence = accel_latch.sequence;
-    }
-    rt_hw_interrupt_enable(level);
-    return result;
+    return read_latch(&accel_latch);
 }
 
+/**
+ * @brief 获取陀螺仪 DRDY 锁存值。
+ * @return 陀螺仪最近一次 DRDY 的时间戳和序号。
+ */
 bmi088_drdy_latch_t bmi088_stm32_gyro_latch(void)
 {
-    bmi088_drdy_latch_t result = {0};
-    const rt_base_t level = rt_hw_interrupt_disable();
-
-    if (adapter_initialized) {
-        result.timestamp_us = gyro_latch.timestamp_us;
-        result.sequence = gyro_latch.sequence;
-    }
-    rt_hw_interrupt_enable(level);
-    return result;
+    return read_latch(&gyro_latch);
 }
 
+/**
+ * @brief 处理 BMI088 的 PB12/PB14 外部中断。
+ * @note 在 RT-Thread 中断上下文中锁存当前微秒时间、递增序号并通知上层。
+ */
 void EXTI15_10_IRQHandler(void)
 {
     rt_interrupt_enter();

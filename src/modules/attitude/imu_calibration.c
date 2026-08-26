@@ -1,12 +1,29 @@
+/**
+ * @file imu_calibration.c
+ * @brief 静止 IMU 样本校准的累计和判定实现。
+ */
+
 #include "attitude/imu_calibration.h"
 
 #include <math.h>
 
+/**
+ * @brief 逐分量相加两个三维向量。
+ * @param lhs 左操作数。
+ * @param rhs 右操作数。
+ * @return 两个向量的逐分量和。
+ */
 static imu_vec3f_t vec_add(imu_vec3f_t lhs, imu_vec3f_t rhs)
 {
     return (imu_vec3f_t){lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
 }
 
+/**
+ * @brief 将三维向量的每个分量乘以同一个标量。
+ * @param value 待缩放的向量。
+ * @param scale 缩放因子。
+ * @return 缩放后的向量。
+ */
 static imu_vec3f_t vec_scale(imu_vec3f_t value, float scale)
 {
     return (imu_vec3f_t){value.x * scale, value.y * scale, value.z * scale};

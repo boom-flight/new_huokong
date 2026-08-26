@@ -13,6 +13,7 @@ scripts = [
     'src/platform/devices/SConscript',
     'src/platform/time/SConscript',
     'src/platform/transport/SConscript',
+    'src/kernel/logging/SConscript',
     'src/kernel/imu/SConscript',
     'src/app/SConscript',
     'src/kernel/telemetry/SConscript',

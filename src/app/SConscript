@@ -1,11 +1,15 @@
 from building import *
+Import('manifest')
+from firmware_manifest import manifest_group_settings
 
 cwd = GetCurrentDir()
 kernel_root = Dir('#src/kernel').abspath
+settings = manifest_group_settings(manifest, 'application', root=Dir('#').abspath)
 src = ['main.c']
 
 group = DefineGroup('Applications', src, depend=[''],
-                    CPPPATH=[cwd, kernel_root],
+                    CPPPATH=settings['include_paths'],
+                    CPPDEFINES=settings['defines'],
                     LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror')
 
 Return('group')

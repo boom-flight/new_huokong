@@ -1,3 +1,8 @@
+/**
+ * @file timestamp_extender.c
+ * @brief 16 位计数器回绕后的时间戳合成实现。
+ */
+
 #include "timing/timestamp_extender.h"
 
 uint32_t timestamp_extender_compose(uint16_t high_word, uint16_t counter,

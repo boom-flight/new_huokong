@@ -1,16 +1,22 @@
-Import('env')
+Import('env', 'manifest')
 from building import DefineGroup
+from firmware_manifest import manifest_group_settings
 
 module_root = Dir('#src/modules').abspath
+settings = manifest_group_settings(manifest, 'modules', root=Dir('#').abspath)
 transport_env = env.Clone(BUILDERS={})
 transport_env.Tool('cc')
-transport_env.Replace(CFLAGS=env['CFLAGS'], CPPPATH=[module_root])
+transport_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 transport_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
     transport_env.Tool('compilation_db')
 
 transport_objects = transport_env.Object(
-    target='#build/firmware/modules/transport/dma_tx_state',
+    target='#build/scons/firmware/objects/modules/transport/dma_tx_state',
     source='dma_tx_state.c',
 )
 transport_group = DefineGroup('Transport', transport_objects, depend=[''])

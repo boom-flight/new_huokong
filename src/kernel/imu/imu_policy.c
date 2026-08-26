@@ -1,7 +1,27 @@
+/**
+ * @file imu_policy.c
+ * @brief IMU 采样时序、校准准入和状态策略的无设备实现。
+ */
+
 #include "imu/imu_policy.h"
 
 #include <math.h>
 #include <stdlib.h>
+
+imu_sample_read_result_t imu_classify_sample_read(uint32_t before_sequence,
+                                                  uint32_t after_sequence,
+                                                  bool read_succeeded)
+{
+    const bool latch_consistent =
+        imu_latch_sequence_consistent(before_sequence, after_sequence);
+
+    if (read_succeeded) {
+        return latch_consistent ? IMU_SAMPLE_READ_CONSISTENT_SUCCESS
+                                : IMU_SAMPLE_READ_CHANGED_LATCH;
+    }
+    return latch_consistent ? IMU_SAMPLE_READ_CONSISTENT_FAILURE
+                            : IMU_SAMPLE_READ_CHANGED_LATCH_FAILURE;
+}
 
 imu_dt_action_t imu_classify_gyro_delta_us(uint32_t delta_us)
 {
@@ -99,8 +119,6 @@ imu_calibration_admission_t imu_calibration_admission(
     imu_dt_action_t dt_action,
     bool gyro_overrun,
     bool has_accel_sample,
-    imu_vec3f_t gyro_dps,
-    imu_vec3f_t consumed_accel_g,
     uint32_t newest_accel_sequence,
     uint32_t consumed_accel_sequence,
     uint32_t consumed_accel_timestamp_us,
@@ -109,8 +127,7 @@ imu_calibration_admission_t imu_calibration_admission(
     if (!has_gyro_baseline || dt_action != IMU_DT_INTEGRATE || gyro_overrun) {
         return IMU_CALIBRATION_ADMISSION_RESET;
     }
-    if (!has_accel_sample || !imu_calibration_gyro_stationary(gyro_dps) ||
-        !imu_calibration_accel_stationary(consumed_accel_g) ||
+    if (!has_accel_sample ||
         (uint32_t)(gyro_timestamp_us - consumed_accel_timestamp_us) > 5000u) {
         return IMU_CALIBRATION_ADMISSION_RESET;
     }

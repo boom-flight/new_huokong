@@ -5,6 +5,45 @@
 #include <stdint.h>
 #include <string.h>
 
+static void test_latch_sequence_consistency_accepts_unchanged_sample(void)
+{
+    assert(imu_latch_sequence_consistent(12u, 12u));
+}
+
+static void test_latch_sequence_consistency_rejects_changed_sample_for_overrun(void)
+{
+    assert(!imu_latch_sequence_consistent(12u, 13u));
+}
+
+static void test_latch_sequence_consistency_treats_wrap_as_a_new_event(void)
+{
+    assert(!imu_latch_sequence_consistent(UINT32_MAX, 0u));
+    assert(!imu_latch_sequence_consistent(UINT32_MAX - 1u, 0u));
+    assert(!imu_latch_sequence_consistent(0u, UINT32_MAX));
+}
+
+static void test_sample_read_result_distinguishes_consistent_success(void)
+{
+    assert(imu_classify_sample_read(12u, 12u, true) ==
+           IMU_SAMPLE_READ_CONSISTENT_SUCCESS);
+}
+
+static void test_sample_read_result_rejects_changed_latch_including_wrap(void)
+{
+    assert(imu_classify_sample_read(12u, 13u, true) ==
+           IMU_SAMPLE_READ_CHANGED_LATCH);
+    assert(imu_classify_sample_read(UINT32_MAX, 0u, true) ==
+           IMU_SAMPLE_READ_CHANGED_LATCH);
+}
+
+static void test_sample_read_result_preserves_read_failure_reason(void)
+{
+    assert(imu_classify_sample_read(12u, 12u, false) ==
+           IMU_SAMPLE_READ_CONSISTENT_FAILURE);
+    assert(imu_classify_sample_read(12u, 13u, false) ==
+           IMU_SAMPLE_READ_CHANGED_LATCH_FAILURE);
+}
+
 static void test_dt_classification_has_inclusive_integration_boundaries(void)
 {
     assert(imu_classify_gyro_delta_us(0u) == IMU_DT_SKIP_KEEP_VALID);
@@ -74,80 +113,54 @@ static void test_gyro_bias_subtracts_arbitrary_signed_vectors_component_wise(voi
 
 static void test_calibration_admission_accepts_a_coherent_sample(void)
 {
-    const imu_vec3f_t one_g = {0.0f, 0.0f, 1.0f};
-    const imu_vec3f_t stationary_gyro = {0.5f, -0.25f, 0.125f};
-
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro, one_g, 12u, 12u,
-                                     1000u, 6000u) ==
+                                     12u, 12u, 1000u, 6000u) ==
            IMU_CALIBRATION_ADMISSION_ACCEPT);
 }
 
 static void test_calibration_admission_skips_a_pending_accel(void)
 {
-    const imu_vec3f_t one_g = {0.0f, 0.0f, 1.0f};
-    const imu_vec3f_t stationary_gyro = {0.5f, -0.25f, 0.125f};
-
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
+                                     13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_SKIP_PENDING_ACCEL);
 }
 
 static void test_calibration_admission_gives_gyro_failures_reset_precedence(void)
 {
-    const imu_vec3f_t one_g = {0.0f, 0.0f, 1.0f};
-    const imu_vec3f_t stationary_gyro = {0.5f, -0.25f, 0.125f};
-
     assert(imu_calibration_admission(false, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
+                                     13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
     assert(imu_calibration_admission(true, IMU_DT_SKIP_KEEP_VALID, false, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
+                                     13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
     assert(imu_calibration_admission(true, IMU_DT_SKIP_INVALIDATE, false, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
+                                     13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, true, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
+                                     13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
 }
 
-static void test_pending_accel_cannot_mask_observable_sample_failures(void)
+static void test_calibration_admission_requires_accel_presence_and_freshness(void)
 {
-    const imu_vec3f_t one_g = {0.0f, 0.0f, 1.0f};
-    const imu_vec3f_t stationary_gyro = {0.5f, -0.25f, 0.125f};
-
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, false,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 1500u) ==
-           IMU_CALIBRATION_ADMISSION_RESET);
-    assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     (imu_vec3f_t){3.0f, 0.0f, 0.0f},
-                                     one_g, 13u, 12u, 1000u, 1500u) ==
-           IMU_CALIBRATION_ADMISSION_RESET);
-    assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     (imu_vec3f_t){NAN, 0.0f, 0.0f},
-                                     one_g, 13u, 12u, 1000u, 1500u) ==
-           IMU_CALIBRATION_ADMISSION_RESET);
-    assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro,
-                                     (imu_vec3f_t){NAN, 0.0f, 1.0f},
                                      13u, 12u, 1000u, 1500u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro,
-                                     (imu_vec3f_t){0.8f, 0.0f, 0.0f},
                                      13u, 12u, 1000u, 1500u) ==
-           IMU_CALIBRATION_ADMISSION_RESET);
+           IMU_CALIBRATION_ADMISSION_SKIP_PENDING_ACCEL);
     assert(imu_calibration_admission(true, IMU_DT_INTEGRATE, false, true,
-                                     stationary_gyro, one_g, 13u, 12u,
-                                     1000u, 6001u) ==
+                                     13u, 12u, 1000u, 6001u) ==
            IMU_CALIBRATION_ADMISSION_RESET);
+}
+
+static void test_calibration_admission_defers_stationary_validation(void)
+{
+    const imu_calibration_admission_t admission = imu_calibration_admission(
+        true, IMU_DT_INTEGRATE, false, true,
+        12u, 12u, 1000u, 1500u);
+
+    assert(admission == IMU_CALIBRATION_ADMISSION_ACCEPT);
 }
 
 static void test_production_admission_application_interleaves_skip_and_accept(void)
@@ -166,9 +179,8 @@ static void test_production_admission_application_interleaves_skip_and_accept(vo
         const uint32_t accel_timestamp_us = i * 1000u;
         const uint32_t gyro_timestamp_us = accel_timestamp_us + 1000u;
         const imu_calibration_admission_t pending = imu_calibration_admission(
-            true, IMU_DT_INTEGRATE, false, true, gyro, accel,
-            pending_sequence, consumed_sequence, accel_timestamp_us,
-            gyro_timestamp_us);
+            true, IMU_DT_INTEGRATE, false, true, pending_sequence,
+            consumed_sequence, accel_timestamp_us, gyro_timestamp_us);
         const imu_calibration_t before_skip = calibration;
 
         assert(pending == IMU_CALIBRATION_ADMISSION_SKIP_PENDING_ACCEL);
@@ -177,9 +189,8 @@ static void test_production_admission_application_interleaves_skip_and_accept(vo
         assert(memcmp(&calibration, &before_skip, sizeof calibration) == 0);
 
         const imu_calibration_admission_t coherent = imu_calibration_admission(
-            true, IMU_DT_INTEGRATE, false, true, gyro, accel,
-            pending_sequence, pending_sequence, accel_timestamp_us,
-            gyro_timestamp_us);
+            true, IMU_DT_INTEGRATE, false, true, pending_sequence,
+            pending_sequence, accel_timestamp_us, gyro_timestamp_us);
         assert(coherent == IMU_CALIBRATION_ADMISSION_ACCEPT);
         assert(imu_calibration_apply_admission(
             &calibration, coherent, accel, gyro, &step));
@@ -211,9 +222,7 @@ static void test_reset_admission_clears_existing_calibration_progress(void)
            IMU_CALIBRATION_ACCEPTED);
 
     const imu_calibration_admission_t stale = imu_calibration_admission(
-        true, IMU_DT_INTEGRATE, false, true,
-        (imu_vec3f_t){0.5f, -0.25f, 0.125f},
-        (imu_vec3f_t){0.0f, 0.0f, 1.0f}, 12u, 12u, 1000u, 6001u);
+        true, IMU_DT_INTEGRATE, false, true, 12u, 12u, 1000u, 6001u);
     assert(stale == IMU_CALIBRATION_ADMISSION_RESET);
     assert(imu_calibration_apply_admission(
         &calibration, stale, (imu_vec3f_t){0.0f, 0.0f, 1.0f},
@@ -503,6 +512,12 @@ static void test_gyro_stream_recovers_through_production_timing_seams(void)
 
 int main(void)
 {
+    test_latch_sequence_consistency_accepts_unchanged_sample();
+    test_latch_sequence_consistency_rejects_changed_sample_for_overrun();
+    test_latch_sequence_consistency_treats_wrap_as_a_new_event();
+    test_sample_read_result_distinguishes_consistent_success();
+    test_sample_read_result_rejects_changed_latch_including_wrap();
+    test_sample_read_result_preserves_read_failure_reason();
     test_dt_classification_has_inclusive_integration_boundaries();
     test_accel_correction_requires_the_newest_consumed_sequence();
     test_accel_correction_uses_inclusive_norm_and_freshness_gates();
@@ -512,7 +527,8 @@ int main(void)
     test_calibration_admission_accepts_a_coherent_sample();
     test_calibration_admission_skips_a_pending_accel();
     test_calibration_admission_gives_gyro_failures_reset_precedence();
-    test_pending_accel_cannot_mask_observable_sample_failures();
+    test_calibration_admission_requires_accel_presence_and_freshness();
+    test_calibration_admission_defers_stationary_validation();
     test_production_admission_application_interleaves_skip_and_accept();
     test_reset_admission_clears_existing_calibration_progress();
     test_status_composition_preserves_both_source_conditions();

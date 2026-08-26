@@ -1,6 +1,7 @@
 import os
-Import('env')
+Import('env', 'manifest')
 from building import *
+from firmware_manifest import manifest_group_settings
 
 cwd = GetCurrentDir()
 
@@ -11,9 +12,13 @@ CubeMX_Config/Src/stm32f1xx_hal_msp.c
 ''')
 
 
-path =  [cwd]
-path += [cwd + '/CubeMX_Config/Inc']
+settings = manifest_group_settings(manifest, 'board', root=Dir('#').abspath)
 
-env.AppendUnique(CPPDEFINES=['STM32F103xB'])
-group = DefineGroup('Drivers', src, depend = [''], CPPPATH = path)
+group = DefineGroup(
+    'Drivers',
+    src,
+    depend=[''],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
 Return('group')

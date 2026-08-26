@@ -1,3 +1,8 @@
+/**
+ * @file dma_tx_state.c
+ * @brief DMA 发送状态机的占用和异步错误处理实现。
+ */
+
 #include "transport/dma_tx_state.h"
 
 void dma_tx_state_reset(dma_tx_state_t *state)
@@ -14,12 +19,7 @@ bool dma_tx_state_reserve(dma_tx_state_t *state)
     return true;
 }
 
-void dma_tx_state_cancel(dma_tx_state_t *state)
-{
-    state->busy = false;
-}
-
-void dma_tx_state_complete(dma_tx_state_t *state)
+void dma_tx_state_release(dma_tx_state_t *state)
 {
     state->busy = false;
 }

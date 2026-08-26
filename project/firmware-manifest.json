@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "target": {
+    "name": "STM32F103C8",
+    "device": "STM32F103xB",
+    "cpu": "Cortex-M3",
+    "flash": {"origin": "0x08000000", "length": 65536},
+    "ram": {"origin": "0x20000000", "length": 20480},
+    "stack_size": 1024
+  },
+  "groups": [
+    {
+      "name": "application",
+      "sources": ["src/app/main.c"],
+      "include_paths": [
+        ".", "src/kernel", "src/modules", "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include", "vendor/stm32f1-cmsis/Include"
+      ],
+      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+    },
+    {
+      "name": "board",
+      "sources": [
+        "src/platform/board/stm32f103c8/board.c",
+        "src/platform/board/stm32f103c8/CubeMX_Config/Src/stm32f1xx_hal_msp.c"
+      ],
+      "include_paths": [
+        ".", "src/platform/board/stm32f103c8",
+        "src/platform/board/stm32f103c8/CubeMX_Config/Inc",
+        "vendor/cmsis-core/Include", "vendor/stm32f1-cmsis/Include",
+        "vendor/stm32f1-hal/Inc", "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include"
+      ],
+      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+    },
+    {
+      "name": "kernel",
+      "sources": [
+        "src/kernel/imu/imu_policy.c", "src/kernel/imu/imu_service.c",
+        "src/kernel/logging/imu_log_event.c", "src/kernel/logging/imu_log_service.c",
+        "src/kernel/telemetry/telemetry_policy.c",
+        "src/kernel/telemetry/telemetry_service.c"
+      ],
+      "include_paths": [
+        ".", "src/kernel", "src/modules", "src/modules/devices", "src/modules/protocols", "src/platform",
+        "vendor/rt-thread/include", "vendor/rt-thread/components/drivers/include"
+      ],
+      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+    },
+    {
+      "name": "modules",
+      "sources": [
+        "src/modules/attitude/imu_calibration.c",
+        "src/modules/attitude/mahony.c",
+        "src/modules/devices/bmi088/bmi088.c",
+        "src/modules/protocols/imu_telemetry/imu_telemetry.c",
+        "src/modules/timing/timestamp_extender.c",
+        "src/modules/transport/dma_tx_state.c"
+      ],
+      "include_paths": ["src/modules"],
+      "defines": []
+    },
+    {
+      "name": "platform",
+      "sources": [
+        "src/platform/devices/bmi088_stm32.c",
+        "src/platform/time/monotonic_clock_stm32.c",
+        "src/platform/transport/telemetry_uart_stm32.c"
+      ],
+      "include_paths": [
+        ".", "src/platform", "src/modules", "src/modules/devices",
+        "src/platform/board/stm32f103c8/CubeMX_Config/Inc",
+        "vendor/cmsis-core/Include", "vendor/stm32f1-cmsis/Include",
+        "vendor/stm32f1-hal/Inc", "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include"
+      ],
+      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+    },
+    {
+      "name": "rt-thread",
+      "sources": [
+        "vendor/rt-thread/src/clock.c", "vendor/rt-thread/src/components.c",
+        "vendor/rt-thread/src/cpu_up.c", "vendor/rt-thread/src/defunct.c",
+        "vendor/rt-thread/src/idle.c", "vendor/rt-thread/src/ipc.c",
+        "vendor/rt-thread/src/irq.c", "vendor/rt-thread/src/kservice.c",
+        "vendor/rt-thread/src/mem.c", "vendor/rt-thread/src/object.c",
+        "vendor/rt-thread/src/scheduler_comm.c",
+        "vendor/rt-thread/src/scheduler_up.c", "vendor/rt-thread/src/thread.c",
+        "vendor/rt-thread/src/timer.c", "vendor/rt-thread/src/klibc/kerrno.c",
+        "vendor/rt-thread/src/klibc/kstdio.c", "vendor/rt-thread/src/klibc/kstring.c",
+        "vendor/rt-thread/src/klibc/rt_vsnprintf_tiny.c",
+        "vendor/rt-thread/src/klibc/rt_vsscanf.c",
+        "vendor/rt-thread/libcpu/arm/common/atomic_arm.c",
+        "vendor/rt-thread/libcpu/arm/common/div0.c",
+        "vendor/rt-thread/libcpu/arm/common/showmem.c",
+        "vendor/rt-thread/libcpu/arm/cortex-m3/context_gcc.S",
+        "vendor/rt-thread/libcpu/arm/cortex-m3/cpuport.c",
+        "vendor/rt-thread/components/drivers/core/device.c",
+        "vendor/rt-thread/components/drivers/ipc/completion_comm.c",
+        "vendor/rt-thread/components/drivers/ipc/completion_up.c",
+        "vendor/rt-thread/components/drivers/ipc/condvar.c",
+        "vendor/rt-thread/components/drivers/ipc/dataqueue.c",
+        "vendor/rt-thread/components/drivers/ipc/pipe.c",
+        "vendor/rt-thread/components/drivers/ipc/ringblk_buf.c",
+        "vendor/rt-thread/components/drivers/ipc/ringbuffer.c",
+        "vendor/rt-thread/components/drivers/ipc/waitqueue.c",
+        "vendor/rt-thread/components/drivers/ipc/workqueue.c",
+        "vendor/rt-thread/components/drivers/pin/dev_pin.c",
+        "vendor/rt-thread/components/drivers/serial/dev_serial.c",
+        "vendor/rt-thread/components/libc/compilers/common/cctype.c",
+        "vendor/rt-thread/components/libc/compilers/common/cstdlib.c",
+        "vendor/rt-thread/components/libc/compilers/common/cstring.c",
+        "vendor/rt-thread/components/libc/compilers/common/ctime.c",
+        "vendor/rt-thread/components/libc/compilers/common/cunistd.c",
+        "vendor/rt-thread/components/libc/compilers/common/cwchar.c",
+        "vendor/rt-thread/components/libc/compilers/newlib/syscalls.c"
+      ],
+      "keil_sources": [
+        "vendor/rt-thread/src/clock.c", "vendor/rt-thread/src/components.c",
+        "vendor/rt-thread/src/cpu_up.c", "vendor/rt-thread/src/defunct.c",
+        "vendor/rt-thread/src/idle.c", "vendor/rt-thread/src/ipc.c",
+        "vendor/rt-thread/src/irq.c", "vendor/rt-thread/src/kservice.c",
+        "vendor/rt-thread/src/mem.c", "vendor/rt-thread/src/object.c",
+        "vendor/rt-thread/src/scheduler_comm.c",
+        "vendor/rt-thread/src/scheduler_up.c", "vendor/rt-thread/src/thread.c",
+        "vendor/rt-thread/src/timer.c", "vendor/rt-thread/src/klibc/kerrno.c",
+        "vendor/rt-thread/src/klibc/kstdio.c", "vendor/rt-thread/src/klibc/kstring.c",
+        "vendor/rt-thread/src/klibc/rt_vsnprintf_tiny.c",
+        "vendor/rt-thread/src/klibc/rt_vsscanf.c",
+        "vendor/rt-thread/libcpu/arm/common/atomic_arm.c",
+        "vendor/rt-thread/libcpu/arm/common/div0.c",
+        "vendor/rt-thread/libcpu/arm/common/showmem.c",
+        "vendor/rt-thread/libcpu/arm/cortex-m3/context_rvds.S",
+        "vendor/rt-thread/libcpu/arm/cortex-m3/cpuport.c",
+        "vendor/rt-thread/components/drivers/core/device.c",
+        "vendor/rt-thread/components/drivers/ipc/completion_comm.c",
+        "vendor/rt-thread/components/drivers/ipc/completion_up.c",
+        "vendor/rt-thread/components/drivers/ipc/condvar.c",
+        "vendor/rt-thread/components/drivers/ipc/dataqueue.c",
+        "vendor/rt-thread/components/drivers/ipc/pipe.c",
+        "vendor/rt-thread/components/drivers/ipc/ringblk_buf.c",
+        "vendor/rt-thread/components/drivers/ipc/ringbuffer.c",
+        "vendor/rt-thread/components/drivers/ipc/waitqueue.c",
+        "vendor/rt-thread/components/drivers/ipc/workqueue.c",
+        "vendor/rt-thread/components/drivers/pin/dev_pin.c",
+        "vendor/rt-thread/components/drivers/serial/dev_serial.c",
+        "vendor/rt-thread/components/libc/compilers/common/cctype.c",
+        "vendor/rt-thread/components/libc/compilers/common/cstdlib.c",
+        "vendor/rt-thread/components/libc/compilers/common/cstring.c",
+        "vendor/rt-thread/components/libc/compilers/common/ctime.c",
+        "vendor/rt-thread/components/libc/compilers/common/cunistd.c",
+        "vendor/rt-thread/components/libc/compilers/common/cwchar.c",
+        "vendor/rt-thread/components/libc/compilers/newlib/syscalls.c"
+      ],
+      "include_paths": [
+        "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include",
+        "vendor/rt-thread/components/libc/compilers/common/include",
+        "vendor/rt-thread/components/libc/compilers/newlib", "."
+      ],
+      "defines": [
+        "__RTTHREAD__", "SOC_STM32F103C8", "RT_NAME_MAX=12", "RT_CPUS_NR=1",
+        "RT_ALIGN_SIZE=8", "RT_THREAD_PRIORITY_32", "RT_THREAD_PRIORITY_MAX=32",
+        "RT_TICK_PER_SECOND=1000", "IDLE_THREAD_STACK_SIZE=256",
+        "RT_USING_SEMAPHORE", "RT_USING_MUTEX", "RT_USING_EVENT",
+        "RT_USING_SMALL_MEM", "RT_USING_SMALL_MEM_AS_HEAP", "RT_USING_HEAP",
+        "RT_USING_DEVICE", "RT_USING_DEVICE_IPC", "RT_UNAMED_PIPE_NUMBER=64",
+        "RT_USING_CONSOLE", "RT_CONSOLEBUF_SIZE=128",
+        "RT_CONSOLE_DEVICE_NAME=\"uart1\"", "RT_VER_NUM=0x50202",
+        "RT_BACKTRACE_LEVEL_MAX_NR=32", "RT_USING_HW_ATOMIC", "RT_USING_CPU_FFS",
+        "ARCH_ARM", "ARCH_ARM_CORTEX_M", "ARCH_ARM_CORTEX_M3",
+        "RT_USING_COMPONENTS_INIT", "RT_USING_USER_MAIN",
+        "RT_MAIN_THREAD_STACK_SIZE=512", "RT_MAIN_THREAD_PRIORITY=10",
+        "RT_USING_SERIAL", "RT_USING_SERIAL_V1", "RT_SERIAL_RB_BUFSZ=64",
+        "RT_USING_MESSAGEQUEUE",
+        "RT_USING_PIN", "PKG_USING_CMSIS_CORE",
+        "PKG_USING_CMSIS_CORE_LATEST_VERSION", "PKG_USING_STM32F1_HAL_DRIVER",
+        "PKG_USING_STM32F1_HAL_DRIVER_LATEST_VERSION",
+        "PKG_USING_STM32F1_CMSIS_DRIVER",
+        "PKG_USING_STM32F1_CMSIS_DRIVER_LATEST_VERSION", "SOC_FAMILY_STM32",
+        "SOC_SERIES_STM32F1", "BSP_USING_GPIO", "BSP_USING_UART",
+        "BSP_STM32_UART_V1_TX_TIMEOUT=2000", "BSP_USING_UART1",
+        "BSP_GPIO_EXTI15_10_EXTERNAL"
+      ]
+    },
+    {
+      "name": "cmsis",
+      "sources": [
+        "vendor/stm32f1-cmsis/Source/Templates/gcc/startup_stm32f103xb.s",
+        "vendor/stm32f1-cmsis/Source/Templates/system_stm32f1xx.c"
+      ],
+      "keil_sources": [
+        "vendor/stm32f1-cmsis/Source/Templates/arm/startup_stm32f103xb.s",
+        "vendor/stm32f1-cmsis/Source/Templates/system_stm32f1xx.c"
+      ],
+      "include_paths": ["vendor/cmsis-core/Include", "vendor/stm32f1-cmsis/Include"],
+      "defines": ["STM32F103xB"]
+    },
+    {
+      "name": "hal",
+      "sources": [
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_cec.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_cortex.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_crc.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_dma.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_gpio.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_gpio_ex.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_pwr.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_rcc.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_rcc_ex.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_spi.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_tim.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_tim_ex.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_uart.c",
+        "vendor/stm32f1-hal/Src/stm32f1xx_hal_usart.c"
+      ],
+      "include_paths": [
+        "vendor/stm32f1-hal/Inc", "vendor/stm32f1-cmsis/Include",
+        "vendor/cmsis-core/Include",
+        "src/platform/board/stm32f103c8/CubeMX_Config/Inc"
+      ],
+      "defines": ["STM32F103xB", "USE_HAL_DRIVER"]
+    },
+    {
+      "name": "drivers",
+      "sources": [
+        "vendor/rt-thread-stm32-drivers/drv_common.c",
+        "vendor/rt-thread-stm32-drivers/drivers/drv_gpio.c",
+        "vendor/rt-thread-stm32-drivers/drivers/drv_usart.c"
+      ],
+      "include_paths": [
+        "vendor/rt-thread-stm32-drivers",
+        "vendor/rt-thread-stm32-drivers/drivers",
+        "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include",
+        "vendor/stm32f1-hal/Inc", "vendor/stm32f1-cmsis/Include",
+        "vendor/cmsis-core/Include",
+        "src/platform/board/stm32f103c8/CubeMX_Config/Inc"
+      ],
+      "defines": [
+        "STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__", "BSP_USING_GPIO",
+        "BSP_USING_UART", "BSP_USING_UART1", "BSP_GPIO_EXTI15_10_EXTERNAL"
+      ]
+    }
+  ]
+}

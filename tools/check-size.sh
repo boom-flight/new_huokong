@@ -1,11 +1,11 @@
 #!/bin/sh
 set -eu
 
-elf=${1:-build/firmware/huokong.elf}
+elf=${1:-build/scons/firmware/huokong.elf}
 size_tool=${SIZE_TOOL:-arm-none-eabi-size}
 objdump_tool=${OBJDUMP_TOOL:-arm-none-eabi-objdump}
 linker_script=${LINKER_SCRIPT:-src/platform/board/stm32f103c8/linker_scripts/link.lds}
-map_file=${MAP_FILE:-build/firmware/huokong.map}
+map_file=${MAP_FILE:-build/scons/firmware/huokong.map}
 
 if ! test -f "$elf"; then
     echo "ELF file not found: $elf" >&2

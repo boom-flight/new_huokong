@@ -1,0 +1,19 @@
+Import('env', 'manifest')
+from building import DefineGroup
+from firmware_manifest import manifest_group_settings
+
+kernel_root = Dir('#src/kernel').abspath
+module_root = Dir('#src/modules').abspath
+device_root = Dir('#src/modules/devices').abspath
+settings = manifest_group_settings(manifest, 'kernel', root=Dir('#').abspath)
+
+group = DefineGroup(
+    'IMU Logging',
+    ['imu_log_event.c', 'imu_log_service.c'],
+    depend=[''],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
+)
+
+Return('group')
