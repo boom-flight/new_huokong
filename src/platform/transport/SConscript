@@ -19,6 +19,11 @@ uart_objects = uart_env.Object(
     target='#build/scons/firmware/objects/platform/transport/telemetry_uart_stm32',
     source='telemetry_uart_stm32.c',
 )
-uart_group = DefineGroup('STM32 Telemetry UART', uart_objects, depend=[''])
+uart_group = DefineGroup(
+    'STM32 Telemetry UART',
+    uart_objects,
+    depend=[],
+    direct_dependencies=['Transport'],
+)
 
 Return('uart_group')

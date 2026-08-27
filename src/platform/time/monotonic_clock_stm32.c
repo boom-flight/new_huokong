@@ -4,7 +4,7 @@
  * @note TIM2 以 1 MHz 计数，更新中断维护高 16 位，读取时由临界区保证一致性。
  */
 
-#include "monotonic_clock_stm32.h"
+#include "time/monotonic_clock.h"
 
 #include "main.h"
 #include "timing/timestamp_extender.h"
@@ -60,7 +60,7 @@ static bool init_timestamp_timer(void)
  * @return 初始化成功或已完成初始化时返回 true，否则返回 false。
  * @note 初始化失败时会清理已配置的 TIM2 资源。
  */
-bool monotonic_clock_stm32_init(void)
+bool monotonic_clock_init(void)
 {
     if (clock_initialized) {
         return true;
@@ -82,7 +82,7 @@ bool monotonic_clock_stm32_init(void)
 /**
  * @brief 关闭 TIM2 单调时钟。
  */
-void monotonic_clock_stm32_deinit(void)
+void monotonic_clock_deinit(void)
 {
     cleanup_clock();
 }
@@ -91,7 +91,7 @@ void monotonic_clock_stm32_deinit(void)
  * @brief 原子读取并扩展 TIM2 当前计数值。
  * @return 单调时间，单位为微秒；时钟未初始化时返回 0。
  */
-uint32_t monotonic_clock_stm32_now_us(void)
+uint32_t monotonic_clock_now_us(void)
 {
     uint16_t high_word;
     uint16_t counter;

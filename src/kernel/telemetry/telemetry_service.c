@@ -10,7 +10,7 @@
 #include "imu/imu_snapshot.h"
 #include "imu_telemetry/imu_telemetry.h"
 #include "telemetry/telemetry_policy.h"
-#include "transport/telemetry_uart_stm32.h"
+#include "transport/telemetry_uart.h"
 
 #include <rtthread.h>
 
@@ -76,7 +76,7 @@ static void telemetry_thread_entry(void *parameter)
         };
         frame = telemetry_tx_buffers[next_buffer];
         imu_telemetry_encode(sequence, &sample, frame);
-        if (telemetry_uart_stm32_send(
+        if (telemetry_uart_send(
                 frame, IMU_TELEMETRY_FRAME_SIZE) ==
             TELEMETRY_UART_SEND_STARTED) {
             next_buffer ^= 1u;
@@ -101,7 +101,7 @@ bool telemetry_service_init(void)
     next_buffer = 0u;
     thread_should_run = false;
     thread_stopped = false;
-    if (!telemetry_uart_stm32_init()) {
+    if (!telemetry_uart_init()) {
         return false;
     }
     result = rt_thread_init(
@@ -109,7 +109,7 @@ bool telemetry_service_init(void)
         telemetry_stack, TELEMETRY_THREAD_STACK_SIZE,
         TELEMETRY_THREAD_PRIORITY, 10u);
     if (result != RT_EOK) {
-        telemetry_uart_stm32_deinit();
+        telemetry_uart_deinit();
         return false;
     }
     thread_should_run = true;
@@ -118,7 +118,7 @@ bool telemetry_service_init(void)
         thread_should_run = false;
         (void)rt_thread_detach(&telemetry_thread);
         rt_defunct_execute();
-        telemetry_uart_stm32_deinit();
+        telemetry_uart_deinit();
         return false;
     }
 
@@ -138,7 +138,7 @@ bool telemetry_service_deinit(void)
     }
     (void)rt_thread_detach(&telemetry_thread);
     rt_defunct_execute();
-    telemetry_uart_stm32_deinit();
+    telemetry_uart_deinit();
     service_started = false;
     return true;
 }

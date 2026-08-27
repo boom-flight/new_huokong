@@ -21,6 +21,11 @@ device_objects = device_env.Object(
     target='#build/scons/firmware/objects/platform/devices/bmi088_stm32',
     source='bmi088_stm32.c',
 )
-device_group = DefineGroup('STM32 BMI088', device_objects, depend=[''])
+device_group = DefineGroup(
+    'STM32 BMI088',
+    device_objects,
+    depend=[],
+    direct_dependencies=['BMI088', 'STM32 Monotonic Clock'],
+)
 
 Return('device_group')

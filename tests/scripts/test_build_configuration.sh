@@ -52,7 +52,14 @@ fi
 grep -Fq 'python3 tests/scripts/test_link_owners.py' tools/test.sh \
     || fail 'public test runner omits link ownership verification'
 grep -Fq 'tools/build.sh' tools/test.sh \
-    || fail 'public test runner does not build firmware before link ownership'
+     || fail 'public test runner does not build firmware before link ownership'
+grep -Fq 'scons --cdb' tools/test.sh \
+     || fail 'public test runner does not refresh the compilation database'
+grep -Fq 'python3 tests/scripts/test_dependency_boundaries.py' tools/test.sh \
+     || fail 'public test runner omits dependency boundary verification'
+if grep -Fq 'sh tests/scripts/test_dependency_boundaries.py' tools/test.sh; then
+    fail 'public test runner invokes the Python dependency gate through sh'
+fi
 if grep -Fq 'sh tests/scripts/test_build_configuration.sh' tools/test.sh; then
     fail 'public test runner recursively invokes its configuration test'
 fi
@@ -112,38 +119,8 @@ grep -Fq 'compile_commands.json' tests/scripts/test_repository_layout.sh \
 scons --cdb >"$work/cdb-output" 2>&1 \
     || fail 'SCons could not generate the compilation database'
 rm -rf -- build/kernel
-python3 - <<'PY'
-import json
-import shlex
-
-with open("build/scons/compile_commands.json", encoding="utf-8") as stream:
-    entries = json.load(stream)
-with open("project/firmware-manifest.json", encoding="utf-8") as stream:
-    manifest = json.load(stream)
-forbidden_defines = {
-    define.split("=", 1)[0]
-    for group in manifest["groups"]
-    if group["name"] != "modules"
-    for define in group["defines"]
-}
-module_entries = [entry for entry in entries if entry["file"].startswith("src/modules/")]
-if not module_entries:
-    raise SystemExit("compilation database has no module entries")
-for entry in module_entries:
-    includes = [argument for argument in shlex.split(entry["command"]) if argument.startswith("-I")]
-    if includes != ["-Isrc/modules"]:
-        raise SystemExit(f"module include boundary leaked: {entry['file']}: {includes}")
-    defines = [
-        argument[2:].split("=", 1)[0]
-        for argument in shlex.split(entry["command"])
-        if argument.startswith("-D")
-    ]
-    leaked_defines = sorted(set(defines) & forbidden_defines)
-    if leaked_defines:
-        raise SystemExit(
-            f"module define boundary leaked: {entry['file']}: {leaked_defines}"
-        )
-PY
+python3 tests/scripts/test_dependency_boundaries.py \
+    || fail 'dependency boundary verifier rejected the current build boundaries'
 
 expect_layout_rejection() {
     location=$1

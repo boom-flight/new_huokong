@@ -6,6 +6,20 @@
 
 #include <board.h>
 #include <drv_common.h>
+#include <drv_gpio.h>
+#include "indicators/status_led.h"
+
+#define STATUS_LED_PIN GET_PIN(B, 6)
+
+void status_led_init(void)
+{
+    rt_pin_mode(STATUS_LED_PIN, PIN_MODE_OUTPUT);
+}
+
+void status_led_set(bool on)
+{
+    rt_pin_write(STATUS_LED_PIN, on ? PIN_HIGH : PIN_LOW);
+}
 
 /**
  * @brief 配置 HSE、PLL 以及 AHB/APB 总线时钟。

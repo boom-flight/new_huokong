@@ -2,37 +2,45 @@ Import('env', 'manifest')
 from building import DefineGroup
 from firmware_manifest import manifest_group_settings
 
-kernel_root = Dir('#src/kernel').abspath
-module_root = Dir('#src/modules').abspath
-protocol_root = Dir('#src/modules/protocols').abspath
-platform_root = Dir('#src/platform').abspath
 settings = manifest_group_settings(manifest, 'kernel', root=Dir('#').abspath)
 
-policy_env = env.Clone(BUILDERS={})
-policy_env.Tool('cc')
-policy_env.Replace(
+service_env = env.Clone(BUILDERS={})
+service_env.Tool('cc')
+service_env.Replace(
     CFLAGS=env['CFLAGS'],
     CPPPATH=settings['include_paths'],
     CPPDEFINES=settings['defines'],
 )
-policy_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+service_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
 if GetOption('cdb'):
-    policy_env.Tool('compilation_db')
+    service_env.Tool('compilation_db')
 
+service_object = service_env.Object(
+    target='#build/scons/firmware/objects/kernel/telemetry/telemetry_service',
+    source='telemetry_service.c',
+)
 service_group = DefineGroup(
     'Telemetry Service',
-    ['telemetry_service.c'],
-    depend=[''],
-    CPPPATH=settings['include_paths'],
-    CPPDEFINES=settings['defines'],
-    LOCAL_CPPPATH=[platform_root],
-    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror',
+    service_object,
+    depend=[],
+    direct_dependencies=[
+        'IMU Service',
+        'IMU Telemetry',
+        'Telemetry Policy',
+        'STM32 Telemetry UART',
+    ],
 )
-policy_objects = policy_env.Object(
+
+policy_object = service_env.Object(
     target='#build/scons/firmware/objects/kernel/telemetry/telemetry_policy',
     source='telemetry_policy.c',
 )
-policy_group = DefineGroup('Telemetry Policy', policy_objects, depend=[''])
+policy_group = DefineGroup(
+    'Telemetry Policy',
+    policy_object,
+    depend=[],
+    direct_dependencies=[],
+)
 group = service_group + policy_group
 
 Return('group')

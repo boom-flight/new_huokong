@@ -19,6 +19,11 @@ clock_objects = clock_env.Object(
     target='#build/scons/firmware/objects/platform/time/monotonic_clock_stm32',
     source='monotonic_clock_stm32.c',
 )
-clock_group = DefineGroup('STM32 Monotonic Clock', clock_objects, depend=[''])
+clock_group = DefineGroup(
+    'STM32 Monotonic Clock',
+    clock_objects,
+    depend=[],
+    direct_dependencies=['Timing'],
+)
 
 Return('clock_group')

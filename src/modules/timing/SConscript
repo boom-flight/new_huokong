@@ -19,6 +19,11 @@ timing_objects = timing_env.Object(
     target='#build/scons/firmware/objects/modules/timing/timestamp_extender',
     source='timestamp_extender.c',
 )
-timing_group = DefineGroup('Timing', timing_objects, depend=[''])
+timing_group = DefineGroup(
+    'Timing',
+    timing_objects,
+    depend=[],
+    direct_dependencies=[],
+)
 
 Return('timing_group')

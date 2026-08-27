@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import rtconfig
@@ -29,6 +30,29 @@ def bsp_pkg_check():
     ]
     if not all(os.path.isdir(os.path.join(REPOSITORY_ROOT, path)) for path in required):
         print('Vendored dependency package is missing; restore the pinned source snapshot.')
+        Exit(1)
+
+
+def dependency_declaration_check():
+    empty_dependency = re.compile(r"depend\s*=\s*\[\s*['\"]['\"]\s*\]")
+    violations = []
+    source_root = os.path.join(REPOSITORY_ROOT, 'src')
+    for directory, _, files in os.walk(source_root):
+        if 'SConscript' not in files:
+            continue
+        if os.path.relpath(directory, source_root).startswith('platform' + os.sep + 'board'):
+            continue
+        path = os.path.join(directory, 'SConscript')
+        with open(path, encoding='utf-8') as stream:
+            for line_number, line in enumerate(stream, start=1):
+                if empty_dependency.search(line):
+                    violations.append('%s:%d' % (
+                        os.path.relpath(path, REPOSITORY_ROOT), line_number
+                    ))
+    if violations:
+        print('Empty SCons dependency declarations are not allowed:')
+        for violation in violations:
+            print('  ' + violation)
         Exit(1)
 
 
@@ -123,10 +147,12 @@ def verify_manifest_sources(objects):
 
 
 RegisterPreBuildingAction(bsp_pkg_check)
+dependency_declaration_check()
 
 MANIFEST_PATH = os.path.join(REPOSITORY_ROOT, 'project', 'firmware-manifest.json')
 manifest = load_manifest(MANIFEST_PATH)
 validate_manifest(REPOSITORY_ROOT, manifest)
+board_settings = manifest_group_settings(manifest, 'board', root=REPOSITORY_ROOT)
 
 FIRMWARE_DIR = os.path.join('build', 'scons', 'firmware')
 TARGET = os.path.join(FIRMWARE_DIR, 'huokong.' + rtconfig.TARGET_EXT)
@@ -148,6 +174,8 @@ env = Environment(
     LINK=rtconfig.LINK,
     LINKFLAGS=rtconfig.LFLAGS,
     OBJCOPY=rtconfig.OBJCPY,
+    CPPPATH=board_settings['include_paths'],
+    CPPDEFINES=board_settings['defines'],
 )
 env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
 env.AppendUnique(LIBS=['m'])
@@ -169,9 +197,27 @@ direct_hal = [
     'vendor/stm32f1-hal/Src/stm32f1xx_hal_tim_ex.c',
 ]
 hal_settings = manifest_group_settings(manifest, 'hal', root=REPOSITORY_ROOT)
-objs.extend(DefineGroup('Direct HAL', direct_hal, depend=[''],
+hal_env = env.Clone(BUILDERS={})
+hal_env.Tool('cc')
+hal_env.Replace(
+    CFLAGS=env['CFLAGS'],
     CPPPATH=hal_settings['include_paths'],
-    CPPDEFINES=hal_settings['defines']))
+    CPPDEFINES=hal_settings['defines'],
+)
+if GetOption('cdb'):
+    hal_env.Tool('compilation_db')
+hal_objects = []
+for source in direct_hal:
+    hal_objects.extend(hal_env.Object(
+        target='#build/scons/firmware/objects/' + source[:-2],
+        source=source,
+    ))
+objs.extend(DefineGroup(
+    'Direct HAL',
+    hal_objects,
+    depend=[],
+    direct_dependencies=['STM32F1-HAL'],
+))
 
 verify_manifest_sources(objs)
 DoBuilding(TARGET, objs)

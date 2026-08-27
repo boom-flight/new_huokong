@@ -1,15 +1,30 @@
+Import('env')
 from building import *
 Import('manifest')
 from firmware_manifest import manifest_group_settings
 
-cwd = GetCurrentDir()
-kernel_root = Dir('#src/kernel').abspath
 settings = manifest_group_settings(manifest, 'application', root=Dir('#').abspath)
 src = ['main.c']
+app_env = env.Clone(BUILDERS={})
+app_env.Tool('cc')
+app_env.Replace(
+    CFLAGS=env['CFLAGS'],
+    CPPPATH=settings['include_paths'],
+    CPPDEFINES=settings['defines'],
+)
+app_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+if GetOption('cdb'):
+    app_env.Tool('compilation_db')
 
-group = DefineGroup('Applications', src, depend=[''],
-                    CPPPATH=settings['include_paths'],
-                    CPPDEFINES=settings['defines'],
-                    LOCAL_CCFLAGS=' -std=c11 -Wall -Wextra -Werror')
+app_objects = app_env.Object(
+    target='#build/scons/firmware/objects/app/main',
+    source=src,
+)
+group = DefineGroup(
+    'Applications',
+    app_objects,
+    depend=[],
+    direct_dependencies=['IMU Service', 'Telemetry Service', 'Drivers'],
+)
 
 Return('group')

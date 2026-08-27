@@ -13,10 +13,10 @@
       "name": "application",
       "sources": ["src/app/main.c"],
       "include_paths": [
-        ".", "src/kernel", "src/modules", "vendor/rt-thread/include",
-        "vendor/rt-thread/components/drivers/include", "vendor/stm32f1-cmsis/Include"
+        ".", "src/kernel", "src/modules", "src/platform", "vendor/rt-thread/include",
+        "vendor/rt-thread/components/drivers/include"
       ],
-      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+      "defines": ["__RTTHREAD__"]
     },
     {
       "name": "board",
@@ -25,7 +25,7 @@
         "src/platform/board/stm32f103c8/CubeMX_Config/Src/stm32f1xx_hal_msp.c"
       ],
       "include_paths": [
-        ".", "src/platform/board/stm32f103c8",
+        ".", "src/platform", "src/platform/board/stm32f103c8",
         "src/platform/board/stm32f103c8/CubeMX_Config/Inc",
         "vendor/cmsis-core/Include", "vendor/stm32f1-cmsis/Include",
         "vendor/stm32f1-hal/Inc", "vendor/rt-thread/include",
@@ -45,7 +45,7 @@
         ".", "src/kernel", "src/modules", "src/modules/devices", "src/modules/protocols", "src/platform",
         "vendor/rt-thread/include", "vendor/rt-thread/components/drivers/include"
       ],
-      "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+      "defines": ["__RTTHREAD__"]
     },
     {
       "name": "modules",

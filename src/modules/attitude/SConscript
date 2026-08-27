@@ -24,6 +24,11 @@ attitude_objects.extend(attitude_env.Object(
     target='#build/scons/firmware/objects/modules/attitude/imu_calibration',
     source='imu_calibration.c',
 ))
-attitude_group = DefineGroup('Attitude', attitude_objects, depend=[''])
+attitude_group = DefineGroup(
+    'Attitude',
+    attitude_objects,
+    depend=[],
+    direct_dependencies=[],
+)
 
 Return('attitude_group')

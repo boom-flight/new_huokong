@@ -1,11 +1,8 @@
-#include <board.h>
-#include <drv_gpio.h>
 #include <rtthread.h>
 
 #include "imu/imu_service.h"
+#include "indicators/status_led.h"
 #include "telemetry/telemetry_service.h"
-
-#define STATE_LED_PIN GET_PIN(B, 6)
 
 /**
  * @file main.c
@@ -25,7 +22,7 @@
  */
 int main(void)
 {
-    rt_pin_mode(STATE_LED_PIN, PIN_MODE_OUTPUT);
+    status_led_init();
     rt_kprintf("STM32F103 BMI088 telemetry startup\n");
     if (!telemetry_service_init()) {
         rt_kprintf("telemetry service init failed\n");

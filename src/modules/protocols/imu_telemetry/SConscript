@@ -19,6 +19,11 @@ telemetry_objects = telemetry_env.Object(
     target='#build/scons/firmware/objects/modules/imu_telemetry/imu_telemetry',
     source='imu_telemetry.c',
 )
-telemetry_group = DefineGroup('IMU Telemetry', telemetry_objects, depend=[''])
+telemetry_group = DefineGroup(
+    'IMU Telemetry',
+    telemetry_objects,
+    depend=[],
+    direct_dependencies=['Attitude'],
+)
 
 Return('telemetry_group')

@@ -14,11 +14,30 @@ CubeMX_Config/Src/stm32f1xx_hal_msp.c
 
 settings = manifest_group_settings(manifest, 'board', root=Dir('#').abspath)
 
-group = DefineGroup(
-    'Drivers',
-    src,
-    depend=[''],
+board_env = env.Clone(BUILDERS={})
+board_env.Tool('cc')
+board_env.Replace(
+    CFLAGS=env['CFLAGS'],
     CPPPATH=settings['include_paths'],
     CPPDEFINES=settings['defines'],
+)
+board_env.AppendUnique(CPPPATH=[
+    os.path.join(Dir('#').abspath, 'vendor/rt-thread-stm32-drivers'),
+    os.path.join(Dir('#').abspath, 'vendor/rt-thread-stm32-drivers/drivers'),
+])
+if GetOption('cdb'):
+    board_env.Tool('compilation_db')
+
+board_objects = []
+for source in src:
+    board_objects.extend(board_env.Object(
+        target='#build/scons/firmware/objects/platform/board/stm32f103c8/' + source[:-2],
+        source=source,
+    ))
+group = DefineGroup(
+    'Drivers',
+    board_objects,
+    depend=[],
+    direct_dependencies=['Direct HAL', 'STM32F1-HAL'],
 )
 Return('group')

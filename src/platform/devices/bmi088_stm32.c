@@ -4,10 +4,10 @@
  * @note SPI1 使用 PA5/PA6/PA7，传感器片选使用 PA4/PB13，DRDY 使用 PB12/PB14。
  */
 
-#include "bmi088_stm32.h"
+#include "devices/bmi088.h"
 
 #include "main.h"
-#include "time/monotonic_clock_stm32.h"
+#include "time/monotonic_clock.h"
 
 #include <rtthread.h>
 
@@ -243,7 +243,7 @@ static void init_exti_gpio(void)
  * @return 初始化成功返回 true，否则返回 false。
  * @note 重复初始化仅在回调和上下文与当前实例一致时成功。
  */
-bool bmi088_stm32_init(bmi088_drdy_notify_fn notify, void *context)
+bool bmi088_platform_init(bmi088_drdy_notify_fn notify, void *context)
 {
     if (notify == NULL) {
         return false;
@@ -272,7 +272,7 @@ bool bmi088_stm32_init(bmi088_drdy_notify_fn notify, void *context)
 /**
  * @brief 关闭 BMI088 硬件适配器。
  */
-void bmi088_stm32_deinit(void)
+void bmi088_platform_deinit(void)
 {
     cleanup_adapter();
 }
@@ -281,7 +281,7 @@ void bmi088_stm32_deinit(void)
  * @brief 构造 BMI088 STM32 总线操作表。
  * @return 当前适配器的 SPI 读写和延时回调集合。
  */
-bmi088_bus_t bmi088_stm32_bus(void)
+bmi088_bus_t bmi088_platform_bus(void)
 {
     return (bmi088_bus_t){
         .context = NULL,
@@ -295,7 +295,7 @@ bmi088_bus_t bmi088_stm32_bus(void)
  * @brief 获取加速度计 DRDY 锁存值。
  * @return 加速度计最近一次 DRDY 的时间戳和序号。
  */
-bmi088_drdy_latch_t bmi088_stm32_accel_latch(void)
+bmi088_drdy_latch_t bmi088_platform_accel_latch(void)
 {
     return read_latch(&accel_latch);
 }
@@ -304,7 +304,7 @@ bmi088_drdy_latch_t bmi088_stm32_accel_latch(void)
  * @brief 获取陀螺仪 DRDY 锁存值。
  * @return 陀螺仪最近一次 DRDY 的时间戳和序号。
  */
-bmi088_drdy_latch_t bmi088_stm32_gyro_latch(void)
+bmi088_drdy_latch_t bmi088_platform_gyro_latch(void)
 {
     return read_latch(&gyro_latch);
 }
@@ -323,13 +323,13 @@ void EXTI15_10_IRQHandler(void)
     }
     if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_12) != RESET) {
         __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_12);
-        accel_latch.timestamp_us = monotonic_clock_stm32_now_us();
+        accel_latch.timestamp_us = monotonic_clock_now_us();
         ++accel_latch.sequence;
         drdy_notify(drdy_notify_context, BMI088_DRDY_EVENT_ACCEL);
     }
     if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_14) != RESET) {
         __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_14);
-        gyro_latch.timestamp_us = monotonic_clock_stm32_now_us();
+        gyro_latch.timestamp_us = monotonic_clock_now_us();
         ++gyro_latch.sequence;
         drdy_notify(drdy_notify_context, BMI088_DRDY_EVENT_GYRO);
     }

@@ -4,7 +4,7 @@
  * @note 本文件仅实现 USART2 TX；发送使用 DMA1 通道 7，TX 引脚为 PA2。
  */
 
-#include "telemetry_uart_stm32.h"
+#include "transport/telemetry_uart.h"
 
 #include "main.h"
 #include "transport/dma_tx_state.h"
@@ -74,7 +74,7 @@ static void cleanup_uart(void)
  * @return 初始化成功或已完成初始化时返回 true，否则返回 false。
  * @note 初始化失败时会通过 cleanup_uart() 清理部分已创建的资源。
  */
-bool telemetry_uart_stm32_init(void)
+bool telemetry_uart_init(void)
 {
     GPIO_InitTypeDef gpio = {0};
 
@@ -131,7 +131,7 @@ bool telemetry_uart_stm32_init(void)
 /**
  * @brief 关闭 USART2 DMA 发送适配器。
  */
-void telemetry_uart_stm32_deinit(void)
+void telemetry_uart_deinit(void)
 {
     cleanup_uart();
 }
@@ -143,8 +143,8 @@ void telemetry_uart_stm32_deinit(void)
  * @return 发送启动结果，见 telemetry_uart_send_result_t。
  * @note 发送占用由 dma_tx_state_t 串行化，DMA 完成或错误回调负责释放状态。
  */
-telemetry_uart_send_result_t telemetry_uart_stm32_send(const uint8_t *frame,
-                                                       size_t length)
+telemetry_uart_send_result_t telemetry_uart_send(const uint8_t *frame,
+                                                 size_t length)
 {
     uint32_t primask;
 
