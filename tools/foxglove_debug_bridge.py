@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
+from pathlib import Path
 import struct
+import sys
 import time
 from typing import Any
 
@@ -14,6 +17,7 @@ SYNC = b"\xd3\x91"
 RAD_PER_DEG = 3.141592653589793 / 180.0
 M_S2_PER_G = 9.80665
 TIMESTAMP_MASK = 0xFFFFFFFF
+AUTO_PROBE_SECONDS = 1.0
 
 _DIAGNOSTIC_NAMES = (
     "accel_samples",
@@ -153,6 +157,79 @@ class TimestampAligner:
         return timestamp_ns_for(timestamp_us, self.first_timestamp_us, self.first_host_time_ns)
 
 
+def discover_serial_devices(
+    by_id: Path = Path("/dev/serial/by-id"),
+    enumerated: list[str] | None = None,
+) -> list[str]:
+    """Return stable USB serial paths, falling back to enumerated devices."""
+
+    if by_id.is_dir():
+        devices: list[str] = []
+        seen: set[str] = set()
+        for path in sorted(by_id.iterdir()):
+            if not path.is_symlink() or not path.exists():
+                continue
+            real_path = os.path.realpath(path)
+            if real_path not in seen:
+                seen.add(real_path)
+                devices.append(str(path))
+        if devices:
+            return devices
+
+    if enumerated is None:
+        from serial.tools import list_ports
+
+        enumerated = [port.device for port in list_ports.comports()]
+    return sorted(set(enumerated))
+
+
+def select_serial_device(serial_module: Any, baudrate: int,
+                         candidates: list[str]) -> Any:
+    """Select the sole candidate or the one emitting a valid debug frame."""
+    if len(candidates) == 1:
+        return serial_module.Serial(candidates[0], baudrate=baudrate, timeout=1)
+
+    matches: list[str] = []
+    for device in candidates:
+        probe = None
+        try:
+            probe = serial_module.Serial(device, baudrate=baudrate, timeout=0.1)
+            parser = FrameParser()
+            deadline = time.monotonic() + AUTO_PROBE_SECONDS
+            while time.monotonic() < deadline:
+                if parser.feed(probe.read(FRAME_SIZE * 4)):
+                    matches.append(device)
+                    break
+        except Exception:
+            continue
+        finally:
+            if probe is not None:
+                try:
+                    probe.close()
+                except Exception:
+                    pass
+
+    if len(matches) != 1:
+        listed = ", ".join(candidates) if candidates else "none"
+        raise RuntimeError(
+            "could not identify exactly one Foxglove device; "
+            f"candidates: {listed}. Set FOXGLOVE_DEVICE to choose one."
+        )
+
+    return serial_module.Serial(matches[0], baudrate=baudrate, timeout=1)
+
+
+def open_serial_device(serial_module: Any, requested: str, baudrate: int,
+                       candidates: list[str] | None = None) -> Any:
+    """Open an explicit serial device or discover the Foxglove device."""
+    if requested != "auto":
+        return serial_module.Serial(requested, baudrate=baudrate, timeout=1)
+    return select_serial_device(
+        serial_module, baudrate,
+        discover_serial_devices() if candidates is None else candidates,
+    )
+
+
 def _convert(values: list[float | None], scale: float) -> list[float | None]:
     return [None if value is None else value * scale for value in values]
 
@@ -245,7 +322,10 @@ class FoxglovePublisher:
 
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", required=True, help="serial device path")
+    parser.add_argument(
+        "--device", default="auto",
+        help="serial device path, or auto to discover the Foxglove stream",
+    )
     parser.add_argument("--baudrate", type=int, default=115200)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
@@ -254,12 +334,27 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_argument_parser().parse_args(argv)
-    import serial
+    requested_device = os.environ.get("FOXGLOVE_DEVICE", args.device)
+    try:
+        import serial
 
-    serial_device = serial.Serial(args.device, baudrate=args.baudrate, timeout=1)
+        serial_device = open_serial_device(
+            serial, requested_device, args.baudrate
+        )
+    except Exception as error:
+        print(f"serial device selection failed: {error}", file=sys.stderr)
+        return 2
     publisher: FoxglovePublisher | None = None
     try:
-        publisher = FoxglovePublisher(args.host, args.port)
+        try:
+            publisher = FoxglovePublisher(args.host, args.port)
+        except ModuleNotFoundError as error:
+            print(
+                "Foxglove SDK is required; install it with "
+                f"'python3 -m pip install foxglove-sdk' ({error})",
+                file=sys.stderr,
+            )
+            return 2
         parser = FrameParser()
         aligner = TimestampAligner()
         while True:

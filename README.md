@@ -12,6 +12,7 @@ tools/build.sh      # 构建固件并执行 Flash/SRAM 容量门禁
 tools/flash.sh      # 构建一次，自动识别 SWD 探针后烧录并校验
 tools/debug.sh      # 启动 OpenOCD，并连接 arm-none-eabi-gdb 或 gdb-multiarch
 tools/console.sh    # 以 115200 8-N-1 打开 USART1 控制台
+tools/bridge.sh     # 自动发现 USART1 并启动 Foxglove bridge
 ```
 
 烧录和调试入口会自动识别 CMSIS-DAP/DAPLink/FireDAP、ST-Link 和 J-Link。未识别或同时连接多个探针时，可使用 `HUOKONG_PROBE=cmsis-dap|stlink|jlink` 明确选择，例如 `HUOKONG_PROBE=cmsis-dap tools/flash.sh`。

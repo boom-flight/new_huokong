@@ -46,6 +46,7 @@ rm -rf build/kernel
 python3 tests/scripts/test_dependency_boundaries.py
 python3 tests/scripts/test_manifest_boundaries.py
 python3 tests/scripts/test_foxglove_debug_bridge.py
+bash tests/scripts/test_bridge_launcher.sh
 bash tests/scripts/test_foxglove_debug_configuration.sh
 firmware_elf=build/scons/firmware/huokong.elf
 firmware_map=build/scons/firmware/huokong.map

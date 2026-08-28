@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import shutil
 import struct
 import sys
+import tempfile
 import types
 from pathlib import Path
 
@@ -21,6 +24,9 @@ from tools.foxglove_debug_bridge import (  # noqa: E402
     decode_frame,
     make_imu_message,
     make_diagnostics_message,
+    discover_serial_devices,
+    open_serial_device,
+    select_serial_device,
     timestamp_ns_for,
 )
 
@@ -342,6 +348,177 @@ def test_main_closes_publisher_when_serial_close_raises() -> None:
             sys.modules["serial"] = previous_serial
     assert len(publisher_instances) == 1
     assert publisher_instances[0].closed
+
+
+def test_main_reports_missing_foxglove_sdk() -> None:
+    import tools.foxglove_debug_bridge as bridge
+
+    class SerialDevice:
+        def close(self) -> None:
+            pass
+
+    class SerialModule:
+        def Serial(self, *args: object, **kwargs: object) -> SerialDevice:
+            return SerialDevice()
+
+    def missing_publisher(host: str, port: int) -> Any:
+        raise ModuleNotFoundError("No module named 'foxglove'")
+
+    previous_serial = sys.modules.get("serial")
+    previous_publisher = bridge.FoxglovePublisher
+    sys.modules["serial"] = SerialModule()
+    bridge.FoxglovePublisher = missing_publisher  # type: ignore[assignment]
+    try:
+        assert bridge.main(["--device", "/dev/fake"]) == 2
+    finally:
+        bridge.FoxglovePublisher = previous_publisher
+        if previous_serial is None:
+            del sys.modules["serial"]
+        else:
+            sys.modules["serial"] = previous_serial
+
+
+def test_auto_device_selection_uses_the_only_serial_device() -> None:
+    class SerialDevice:
+        def __init__(self, device: str, **kwargs: object) -> None:
+            self.device = device
+            self.kwargs = kwargs
+
+    class SerialModule:
+        def Serial(self, device: str, **kwargs: object) -> SerialDevice:
+            return SerialDevice(device, **kwargs)
+
+    serial_module = SerialModule()
+    device = open_serial_device(
+        serial_module, "auto", 115200, ["/dev/serial/by-id/usb-debug"]
+    )
+
+    assert device.device == "/dev/serial/by-id/usb-debug"
+    assert device.kwargs == {"baudrate": 115200, "timeout": 1}
+
+
+def test_auto_device_selection_probes_multiple_devices_for_valid_frame() -> None:
+    valid_frame = make_frame()
+
+    class SerialDevice:
+        def __init__(self, device: str, **kwargs: object) -> None:
+            self.device = device
+            self.kwargs = kwargs
+            self.closed = False
+            self.read_once = False
+
+        def read(self, size: int) -> bytes:
+            assert size == FRAME_SIZE * 4
+            if self.device.endswith("ttyUSB1") and not self.read_once:
+                self.read_once = True
+                return valid_frame
+            return b"not a Foxglove frame"
+
+        def close(self) -> None:
+            self.closed = True
+
+    class SerialModule:
+        def __init__(self) -> None:
+            self.instances: list[SerialDevice] = []
+
+        def Serial(self, device: str, **kwargs: object) -> SerialDevice:
+            result = SerialDevice(device, **kwargs)
+            self.instances.append(result)
+            return result
+
+    serial_module = SerialModule()
+    device = open_serial_device(
+        serial_module, "auto", 115200, ["/dev/ttyUSB0", "/dev/ttyUSB1"]
+    )
+
+    assert device.device == "/dev/ttyUSB1"
+    assert device.kwargs == {"baudrate": 115200, "timeout": 1}
+    assert serial_module.instances[0].closed
+    assert serial_module.instances[1].closed
+
+
+def test_auto_device_selection_rejects_ambiguous_serial_devices() -> None:
+    class SerialDevice:
+        def __init__(self, device: str, **kwargs: object) -> None:
+            self.device = device
+
+        def read(self, size: int) -> bytes:
+            return b""
+
+        def close(self) -> None:
+            pass
+
+    class SerialModule:
+        def Serial(self, device: str, **kwargs: object) -> SerialDevice:
+            return SerialDevice(device, **kwargs)
+
+    try:
+        select_serial_device(
+            SerialModule(), 115200, ["/dev/ttyUSB0", "/dev/ttyUSB1"]
+        )
+    except RuntimeError as error:
+        assert "could not identify exactly one Foxglove device" in str(error)
+    else:
+        raise AssertionError("ambiguous serial devices were accepted")
+
+
+def test_auto_device_selection_rejects_two_valid_devices() -> None:
+    class SerialDevice:
+        def __init__(self, device: str, **kwargs: object) -> None:
+            self.device = device
+
+        def read(self, size: int) -> bytes:
+            return make_frame()
+
+        def close(self) -> None:
+            pass
+
+    class SerialModule:
+        def Serial(self, device: str, **kwargs: object) -> SerialDevice:
+            return SerialDevice(device, **kwargs)
+
+    try:
+        select_serial_device(
+            SerialModule(), 115200, ["/dev/ttyUSB0", "/dev/ttyUSB1"]
+        )
+    except RuntimeError as error:
+        assert "could not identify exactly one Foxglove device" in str(error)
+    else:
+        raise AssertionError("multiple valid serial devices were accepted")
+
+
+def test_auto_device_selection_ignores_probe_close_failure() -> None:
+    class SerialDevice:
+        def __init__(self, device: str, **kwargs: object) -> None:
+            self.device = device
+
+        def read(self, size: int) -> bytes:
+            return make_frame() if self.device.endswith("ttyUSB0") else b""
+
+        def close(self) -> None:
+            raise RuntimeError("probe close failure")
+
+    class SerialModule:
+        def Serial(self, device: str, **kwargs: object) -> SerialDevice:
+            return SerialDevice(device, **kwargs)
+
+    device = open_serial_device(
+        SerialModule(), "auto", 115200, ["/dev/ttyUSB0", "/dev/ttyUSB1"]
+    )
+    assert device.device == "/dev/ttyUSB0"
+
+
+def test_discovery_falls_back_after_stale_stable_link() -> None:
+    root = Path(tempfile.mkdtemp(prefix="foxglove-serial-"))
+    by_id = root / "by-id"
+    by_id.mkdir()
+    os.symlink("/dev/does-not-exist", by_id / "stale")
+    try:
+        assert discover_serial_devices(
+            by_id, ["/dev/ttyUSB1"]
+        ) == ["/dev/ttyUSB1"]
+    finally:
+        shutil.rmtree(root)
 
 
 def run_tests() -> None:

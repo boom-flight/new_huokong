@@ -19,7 +19,7 @@ Linux/SCons 构建需要 GCC 主机编译器、SCons、`arm-none-eabi-gcc` 工�
 
 ## 支持的命令
 
-所有公开操作都从仓库根目录执行，支持的入口只有以下五个脚本：
+所有公开操作都从仓库根目录执行，支持的入口有以下六个脚本：
 
 | 操作 | 命令 | 说明 |
 | --- | --- | --- |
@@ -28,6 +28,7 @@ Linux/SCons 构建需要 GCC 主机编译器、SCons、`arm-none-eabi-gcc` 工�
 | 烧录 | `tools/flash.sh` | 先构建，再通过 `tools/openocd.sh` 自动识别 CMSIS-DAP/DAPLink/FireDAP、ST-Link 或 J-Link，使用 OpenOCD 校验、烧录并复位目标板；可用 `HUOKONG_PROBE=cmsis-dap|stlink|jlink` 手动选择。 |
 | 调试 | `tools/debug.sh` | 对已有 ELF 启动 OpenOCD，并用 `arm-none-eabi-gdb` 或 `gdb-multiarch` 连接 `localhost:3333`。 |
 | 控制台 | `tools/console.sh` | 以 115200 baud 打开 USART1 控制台；可传串口设备，默认 `/dev/ttyUSB0`。 |
+| Foxglove bridge | `tools/bridge.sh` | 自动发现并打开输出 Foxglove 帧的串口。 |
 
 Keil 工作流：在 Windows 的 Keil MDK5 中打开 `project/keil/huokong.uvprojx`，构建 `Debug` target。提交的 `.uvprojx`、manifest 和 scatter file 可直接使用；`.uvoptx/.uvguix` 是本地忽略的 IDE 元数据。
 
@@ -35,12 +36,14 @@ Foxglove debug 工作流需要安装 PC bridge 依赖：
 
 ```bash
 python3 -m pip install pyserial foxglove-sdk
-python3 tools/foxglove_debug_bridge.py --device /dev/ttyUSB0
+tools/bridge.sh
 ```
 
-然后在 Foxglove 中使用 Foxglove WebSocket connection type 连接
-`ws://127.0.0.1:8765`。debug 构建不提供 USART1 控制台；正常构建保留
-USART1 控制台和 USART2 遥测。
+`tools/bridge.sh` 会优先使用 `/dev/serial/by-id/` 下的稳定设备名。只有一个串口
+时直接启动；同时存在多个串口时，会读取并校验 Foxglove 104 字节帧来识别 USART1。
+如果无法唯一识别，可设置 `FOXGLOVE_DEVICE` 指定设备。然后在 Foxglove 中使用
+Foxglove WebSocket connection type 连接 `ws://127.0.0.1:8765`。debug 构建不提供
+USART1 控制台；正常构建保留 USART1 控制台和 USART2 遥测。
 
 从 clean checkout 开始可直接执行 `tools/test.sh`。它的顺序是主机测试、固件构建、ELF/MAP 链接所有权检查、布局及其他静态门禁；主机测试失败时不会进入固件构建。单独使用 `tools/build.sh` 也会执行尺寸和链接所有权门禁。烧录和调试使用 STM32F1 OpenOCD 目标配置；烧录地址为 `0x08000000`。这些软件门禁不代表传感器、引脚、电气信号或通信时序已经完成硬件验证。
 
