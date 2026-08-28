@@ -3,9 +3,35 @@
  * @brief IMU 日志事件的异步队列和日志线程实现。
  */
 
+#include "rtconfig.h"
 #include "logging/imu_log_service.h"
-#include "service_lifecycle.h"
 
+#if defined(HUOKONG_FOXGLOVE_DEBUG)
+
+bool imu_log_service_init(void)
+{
+    return true;
+}
+
+bool imu_log_service_deinit(void)
+{
+    return true;
+}
+
+bool imu_log_submit(imu_log_event_t event)
+{
+    (void)event;
+    return true;
+}
+
+uint32_t imu_log_drop_count(void)
+{
+    return 0u;
+}
+
+#else
+
+#include "service_lifecycle.h"
 #include <rtthread.h>
 
 #include <stddef.h>
@@ -157,3 +183,5 @@ uint32_t imu_log_drop_count(void)
 {
     return log_drop_count;
 }
+
+#endif

@@ -38,11 +38,15 @@ for executable in "${executables[@]}"; do
     "$executable"
 done
 
-sh tests/scripts/test_check_size.sh
+bash tests/scripts/test_check_size.sh
 firmware_build_script=${TEST_FIRMWARE_BUILD_SCRIPT:-./tools/build.sh}
 "$firmware_build_script"
 scons --cdb
+rm -rf build/kernel
 python3 tests/scripts/test_dependency_boundaries.py
+python3 tests/scripts/test_manifest_boundaries.py
+python3 tests/scripts/test_foxglove_debug_bridge.py
+bash tests/scripts/test_foxglove_debug_configuration.sh
 firmware_elf=build/scons/firmware/huokong.elf
 firmware_map=build/scons/firmware/huokong.map
 if [[ ! -f "$firmware_elf" || ! -f "$firmware_map" ]]; then
@@ -50,14 +54,18 @@ if [[ ! -f "$firmware_elf" || ! -f "$firmware_map" ]]; then
         "$firmware_elf" "$firmware_map" >&2
     exit 1
 fi
+if arm-none-eabi-nm -g "$firmware_elf" | rg -q 'foxglove_debug_'; then
+    printf 'disabled firmware ELF contains Foxglove debug symbols\n' >&2
+    exit 1
+fi
 python3 tests/scripts/test_link_owners.py "$firmware_elf" "$firmware_map"
 if [[ ${SKIP_TEST_RUNNER_SELF_TEST:-0} != 1 ]]; then
-    SKIP_TEST_RUNNER_SELF_TEST=1 sh tests/scripts/test_test_runner.sh
+    SKIP_TEST_RUNNER_SELF_TEST=1 bash tests/scripts/test_test_runner.sh
 fi
-sh tests/scripts/test_repository_layout.sh
-sh tests/scripts/test_no_imu_thread_logging.sh
-sh tests/scripts/test_imu_platform_boundary.sh
-sh tests/scripts/test_service_ownership.sh
-sh tests/scripts/test_telemetry_state_ownership.sh
-sh tools/keil-project-check.sh
+bash tests/scripts/test_repository_layout.sh
+bash tests/scripts/test_no_imu_thread_logging.sh
+bash tests/scripts/test_imu_platform_boundary.sh
+bash tests/scripts/test_service_ownership.sh
+bash tests/scripts/test_telemetry_state_ownership.sh
+bash tools/keil-project-check.sh
 "$PROJECT_ROOT/tests/test_debug_probe.sh"

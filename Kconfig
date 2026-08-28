@@ -10,6 +10,11 @@ config SOC_STM32F103C8
     select RT_USING_USER_MAIN
     default y
 
+config HUOKONG_FOXGLOVE_DEBUG
+    bool "Enable Foxglove debug output on USART1"
+    depends on BSP_USING_UART1
+    default n
+
 source "$(RTT_DIR)/Kconfig"
 rsource "$(BSP_DIR)/soc/Kconfig"
 rsource "$(BSP_DIR)/Kconfig"

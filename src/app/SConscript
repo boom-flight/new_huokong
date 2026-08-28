@@ -24,7 +24,7 @@ group = DefineGroup(
     'Applications',
     app_objects,
     depend=[],
-    direct_dependencies=['IMU Service', 'Telemetry Service', 'Drivers'],
+    direct_dependencies=['IMU Service', 'Telemetry Service', 'Foxglove Debug', 'Drivers'],
 )
 
 Return('group')

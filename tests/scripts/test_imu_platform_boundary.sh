@@ -14,6 +14,11 @@ bmi088_contract=src/platform/devices/bmi088.h
 clock_contract=src/platform/time/monotonic_clock.h
 bmi088_adapter=src/platform/devices/bmi088_stm32.c
 clock_adapter=src/platform/time/monotonic_clock_stm32.c
+debug_adapter=src/platform/transport/foxglove_debug_uart_stm32.c
+
+if rg -n '\bUSART1_IRQHandler\b|HAL_UART_(TxCplt|Error)Callback|HAL_UART_Msp(Init|DeInit)' "$debug_adapter"; then
+    fail 'Foxglove UART adapter owns a forbidden USART1 IRQ or HAL callback'
+fi
 
 if rg -n '#include\s+[<"](board\.h|drv_gpio\.h)[>"]|GET_PIN\(|rt_pin_(mode|write)\(' "$imu_service"; then
     fail 'IMU service contains board or GPIO implementation details'

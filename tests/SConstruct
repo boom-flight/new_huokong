@@ -10,10 +10,12 @@ base = Environment(
 )
 
 
-def host_test(name, sources, include_paths):
+def host_test(name, sources, include_paths, defines=None, extra_objects=None):
     test_env = base.Clone()
     test_env.AppendUnique(CPPPATH=include_paths)
-    objects = []
+    if defines:
+        test_env.AppendUnique(CPPDEFINES=defines)
+    objects = list(extra_objects or [])
     for index, source in enumerate(sources):
         target = 'build/scons/host-tests/obj/{}/{}'.format(name, index)
         objects.append(test_env.Object(target=target, source=source))
@@ -32,7 +34,7 @@ imu_log_event_include_paths = [
     'src/kernel', 'src/modules/devices', 'src/modules'
 ]
 logging_test_include_paths = [
-    'tests/fakes', 'src/kernel', 'src/modules', 'src/modules/devices'
+    'tests/fakes', '.', 'src/kernel', 'src/modules', 'src/modules/devices'
 ]
 logging_service_sources = [
     'src/kernel/logging/imu_log_service.c',
@@ -142,6 +144,21 @@ test_imu_log_service_startup_failure = host_test(
 )
 Alias('test_imu_log_service_startup_failure', test_imu_log_service_startup_failure)
 
+test_imu_log_service_enabled = host_test(
+    'test_imu_log_service_enabled',
+    [
+        'tests/kernel/logging/test_imu_log_service_enabled.c',
+        'src/kernel/logging/imu_log_service.c',
+        'src/kernel/logging/imu_log_event.c',
+        'tests/fakes/fake_rtthread_log.c',
+    ],
+    [
+        'tests/fakes/generated-debug-rtconfig', 'tests/fakes', '.',
+        'src/kernel', 'src/modules', 'src/modules/devices'
+    ],
+)
+Alias('test_imu_log_service_enabled', test_imu_log_service_enabled)
+
 test_telemetry_policy = host_test(
     'test_telemetry_policy',
     [
@@ -161,3 +178,49 @@ test_dma_tx_state = host_test(
     module_include_paths,
 )
 Alias('test_dma_tx_state', test_dma_tx_state)
+
+foxglove_uart_include_paths = ['tests/fakes', '.', 'src/platform', 'src/modules']
+test_foxglove_debug_uart = host_test(
+    'test_foxglove_debug_uart',
+    [
+        'tests/platform/transport/test_foxglove_debug_uart.c',
+        'tests/fakes/fake_foxglove_uart_device.c',
+        'src/platform/transport/foxglove_debug_uart_stm32.c',
+    ],
+    foxglove_uart_include_paths,
+    ['HUOKONG_FOXGLOVE_DEBUG'],
+)
+Alias('test_foxglove_debug_uart', test_foxglove_debug_uart)
+
+foxglove_debug_frame_env = base.Clone()
+foxglove_debug_frame_env.AppendUnique(
+    CPPPATH=[
+        'tests/fakes/generated-debug-rtconfig',
+        'src/debug', 'src/kernel', 'src/modules'
+    ],
+)
+foxglove_debug_frame_object = foxglove_debug_frame_env.Object(
+    target='build/scons/host-tests/obj/shared/foxglove_debug_frame',
+    source='src/debug/foxglove_debug_frame.c',
+)
+
+test_foxglove_debug_frame = host_test(
+    'test_foxglove_debug_frame',
+    ['tests/debug/test_foxglove_debug_frame.c'],
+    ['tests/fakes', 'src/debug', 'src/kernel', 'src/modules'],
+    extra_objects=[foxglove_debug_frame_object],
+)
+Alias('test_foxglove_debug_frame', test_foxglove_debug_frame)
+
+test_foxglove_debug_service = host_test(
+    'test_foxglove_debug_service',
+    [
+        'tests/debug/test_foxglove_debug_service.c',
+        'tests/fakes/fake_foxglove_debug_runtime.c',
+        'src/debug/foxglove_debug.c',
+    ],
+    ['tests/fakes', '.', 'src/debug', 'src/kernel', 'src/modules', 'src/platform'],
+    ['HUOKONG_FOXGLOVE_DEBUG'],
+    extra_objects=[foxglove_debug_frame_object],
+)
+Alias('test_foxglove_debug_service', test_foxglove_debug_service)

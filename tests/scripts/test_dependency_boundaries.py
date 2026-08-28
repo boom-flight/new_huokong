@@ -33,6 +33,7 @@ OWNED_PREFIXES = {
     "kernel": "src/kernel/",
     "modules": "src/modules/",
     "platform": "src/platform/",
+    "debug": "src/debug/",
 }
 OWNED_GROUPS = tuple(OWNED_PREFIXES)
 
@@ -51,15 +52,18 @@ GROUP_LAYERS = {
     "STM32 BMI088": "platform",
     "STM32 Monotonic Clock": "platform",
     "STM32 Telemetry UART": "platform",
+    "Foxglove Debug": "debug",
+    "STM32 Foxglove UART": "platform",
     "Drivers": "board",
     "Direct HAL": "platform",
     "STM32F1-HAL": "vendor",
 }
 ALLOWED_LAYER_GRAPH = {
-    "application": {"kernel", "platform", "board"},
+    "application": {"kernel", "platform", "board", "debug"},
     "kernel": {"kernel", "module", "platform", "board"},
     "module": {"module"},
     "platform": {"module", "platform", "vendor"},
+    "debug": {"kernel", "platform"},
     "board": {"vendor", "platform"},
     "vendor": set(),
 }
@@ -323,8 +327,17 @@ def manifest_owned_sources():
 
     expected = {group: set() for group in OWNED_GROUPS}
     complete = set()
+    debug_enabled = bool(
+        re.search(
+            r"^\s*#define\s+HUOKONG_FOXGLOVE_DEBUG\b",
+            (ROOT / "rtconfig.h").read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+    )
     for group in manifest["groups"]:
         for source in group["sources"]:
+            if source.startswith("src/debug/") and not debug_enabled:
+                continue
             complete.add(source)
             source_group_name = source_group(source)
             if source_group_name is None:
@@ -513,7 +526,9 @@ def check_compile_commands():
             fail(f"compilation database {group} source set differs from manifest (" + "; ".join(details) + ")")
 
     for group, group_entries in grouped.items():
-        if not group_entries:
+        if not group_entries and not (
+            group == "debug" and not expected["debug"]
+        ):
             fail(f"compilation database has no {group} entries")
 
     for source, _entry, _arguments, includes, defines in grouped["modules"]:
@@ -540,7 +555,10 @@ def check_compile_commands():
 
     for source, _entry, _arguments, includes, _defines in grouped["platform"]:
         leaked_includes = sorted(
-            include for include in includes if include == "src/kernel" or include.startswith("src/kernel/")
+            include
+            for include in includes
+            if include == "src/kernel" or include.startswith("src/kernel/")
+            or include == "src/debug" or include.startswith("src/debug/")
         )
         if leaked_includes:
             fail(f"platform reverse dependency leaked: {source}: {leaked_includes}")
@@ -566,6 +584,7 @@ def check_compile_commands():
     relevant_inputs.extend(source_files(ROOT / "src/app"))
     relevant_inputs.extend(source_files(ROOT / "src/kernel"))
     relevant_inputs.extend(source_files(ROOT / "src/modules"))
+    relevant_inputs.extend(source_files(ROOT / "src/debug"))
     relevant_inputs.extend(
         path
         for path in source_files(ROOT / "src/platform")

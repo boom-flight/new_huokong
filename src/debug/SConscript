@@ -1,0 +1,37 @@
+Import('env', 'manifest')
+from building import DefineGroup, GetDepend
+from firmware_manifest import manifest_group_settings
+
+debug_objects = []
+if GetDepend('HUOKONG_FOXGLOVE_DEBUG'):
+    settings = manifest_group_settings(manifest, 'debug', root=Dir('#').abspath)
+    src = [
+        'foxglove_debug.c',
+        'foxglove_debug_console.c',
+        'foxglove_debug_frame.c',
+    ]
+    debug_env = env.Clone(BUILDERS={})
+    debug_env.Tool('cc')
+    debug_env.Replace(
+        CFLAGS=env['CFLAGS'],
+        CPPPATH=settings['include_paths'],
+        CPPDEFINES=settings['defines'],
+    )
+    debug_env.Append(CCFLAGS=['-std=c11', '-Wall', '-Wextra', '-Werror'])
+    if GetOption('cdb'):
+        debug_env.Tool('compilation_db')
+
+    for source in src:
+        debug_objects.extend(debug_env.Object(
+            target='#build/scons/firmware/objects/debug/' + source[:-2],
+            source=source,
+        ))
+
+group = DefineGroup(
+    'Foxglove Debug',
+    debug_objects,
+    depend=[],
+    direct_dependencies=['IMU Service', 'STM32 Foxglove UART'],
+)
+
+Return('group')

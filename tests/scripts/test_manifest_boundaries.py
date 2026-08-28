@@ -30,6 +30,7 @@ GROUP_SCRIPTS = {
         "src/platform/time/SConscript",
         "src/platform/transport/SConscript",
     ],
+    "debug": ["src/debug/SConscript"],
 }
 SOURCE_PREFIXES = {
     "application": "src/app/",
@@ -37,6 +38,7 @@ SOURCE_PREFIXES = {
     "kernel": "src/kernel/",
     "modules": "src/modules/",
     "platform": "src/platform/",
+    "debug": "src/debug/",
 }
 
 

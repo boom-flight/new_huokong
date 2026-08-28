@@ -31,6 +31,17 @@ Linux/SCons 构建需要 GCC 主机编译器、SCons、`arm-none-eabi-gcc` 工�
 
 Keil 工作流：在 Windows 的 Keil MDK5 中打开 `project/keil/huokong.uvprojx`，构建 `Debug` target。提交的 `.uvprojx`、manifest 和 scatter file 可直接使用；`.uvoptx/.uvguix` 是本地忽略的 IDE 元数据。
 
+Foxglove debug 工作流需要安装 PC bridge 依赖：
+
+```bash
+python3 -m pip install pyserial foxglove-sdk
+python3 tools/foxglove_debug_bridge.py --device /dev/ttyUSB0
+```
+
+然后在 Foxglove 中使用 Foxglove WebSocket connection type 连接
+`ws://127.0.0.1:8765`。debug 构建不提供 USART1 控制台；正常构建保留
+USART1 控制台和 USART2 遥测。
+
 从 clean checkout 开始可直接执行 `tools/test.sh`。它的顺序是主机测试、固件构建、ELF/MAP 链接所有权检查、布局及其他静态门禁；主机测试失败时不会进入固件构建。单独使用 `tools/build.sh` 也会执行尺寸和链接所有权门禁。烧录和调试使用 STM32F1 OpenOCD 目标配置；烧录地址为 `0x08000000`。这些软件门禁不代表传感器、引脚、电气信号或通信时序已经完成硬件验证。
 
 ## 集中输出

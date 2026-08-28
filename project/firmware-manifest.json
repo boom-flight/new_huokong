@@ -13,7 +13,7 @@
       "name": "application",
       "sources": ["src/app/main.c"],
       "include_paths": [
-        ".", "src/kernel", "src/modules", "src/platform", "vendor/rt-thread/include",
+        ".", "src", "src/kernel", "src/modules", "src/platform", "vendor/rt-thread/include",
         "vendor/rt-thread/components/drivers/include"
       ],
       "defines": ["__RTTHREAD__"]
@@ -65,7 +65,8 @@
       "sources": [
         "src/platform/devices/bmi088_stm32.c",
         "src/platform/time/monotonic_clock_stm32.c",
-        "src/platform/transport/telemetry_uart_stm32.c"
+        "src/platform/transport/telemetry_uart_stm32.c",
+        "src/platform/transport/foxglove_debug_uart_stm32.c"
       ],
       "include_paths": [
         ".", "src/platform", "src/modules", "src/modules/devices",
@@ -75,6 +76,19 @@
         "vendor/rt-thread/components/drivers/include"
       ],
       "defines": ["STM32F103xB", "USE_HAL_DRIVER", "__RTTHREAD__"]
+    },
+    {
+      "name": "debug",
+      "sources": [
+        "src/debug/foxglove_debug.c",
+        "src/debug/foxglove_debug_console.c",
+        "src/debug/foxglove_debug_frame.c"
+      ],
+      "include_paths": [
+        ".", "src/debug", "src/kernel", "src/modules", "src/platform",
+        "vendor/rt-thread/include", "vendor/rt-thread/components/drivers/include"
+      ],
+      "defines": []
     },
     {
       "name": "rt-thread",

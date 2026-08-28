@@ -26,4 +26,16 @@ uart_group = DefineGroup(
     direct_dependencies=['Transport'],
 )
 
-Return('uart_group')
+debug_uart_object = uart_env.Object(
+    target='#build/scons/firmware/objects/platform/transport/foxglove_debug_uart_stm32',
+    source='foxglove_debug_uart_stm32.c',
+)
+debug_uart_group = DefineGroup(
+    'STM32 Foxglove UART',
+    debug_uart_object,
+    depend=[],
+    direct_dependencies=[],
+)
+
+group = uart_group + debug_uart_group
+Return('group')

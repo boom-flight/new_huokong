@@ -15,6 +15,7 @@ scripts = [
     'src/platform/transport/SConscript',
     'src/kernel/logging/SConscript',
     'src/kernel/imu/SConscript',
+    'src/debug/SConscript',
     'src/app/SConscript',
     'src/kernel/telemetry/SConscript',
     board_script,

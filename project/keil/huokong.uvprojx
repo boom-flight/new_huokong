@@ -36,7 +36,7 @@
           <Cads>
             <VariousControls>
               <Define>__RTTHREAD__,STM32F103xB,USE_HAL_DRIVER,SOC_STM32F103C8,RT_NAME_MAX=12,RT_CPUS_NR=1,RT_ALIGN_SIZE=8,RT_THREAD_PRIORITY_32,RT_THREAD_PRIORITY_MAX=32,RT_TICK_PER_SECOND=1000,IDLE_THREAD_STACK_SIZE=256,RT_USING_SEMAPHORE,RT_USING_MUTEX,RT_USING_EVENT,RT_USING_SMALL_MEM,RT_USING_SMALL_MEM_AS_HEAP,RT_USING_HEAP,RT_USING_DEVICE,RT_USING_DEVICE_IPC,RT_UNAMED_PIPE_NUMBER=64,RT_USING_CONSOLE,RT_CONSOLEBUF_SIZE=128,RT_CONSOLE_DEVICE_NAME="uart1",RT_VER_NUM=0x50202,RT_BACKTRACE_LEVEL_MAX_NR=32,RT_USING_HW_ATOMIC,RT_USING_CPU_FFS,ARCH_ARM,ARCH_ARM_CORTEX_M,ARCH_ARM_CORTEX_M3,RT_USING_COMPONENTS_INIT,RT_USING_USER_MAIN,RT_MAIN_THREAD_STACK_SIZE=512,RT_MAIN_THREAD_PRIORITY=10,RT_USING_SERIAL,RT_USING_SERIAL_V1,RT_SERIAL_RB_BUFSZ=64,RT_USING_MESSAGEQUEUE,RT_USING_PIN,PKG_USING_CMSIS_CORE,PKG_USING_CMSIS_CORE_LATEST_VERSION,PKG_USING_STM32F1_HAL_DRIVER,PKG_USING_STM32F1_HAL_DRIVER_LATEST_VERSION,PKG_USING_STM32F1_CMSIS_DRIVER,PKG_USING_STM32F1_CMSIS_DRIVER_LATEST_VERSION,SOC_FAMILY_STM32,SOC_SERIES_STM32F1,BSP_USING_GPIO,BSP_USING_UART,BSP_STM32_UART_V1_TX_TIMEOUT=2000,BSP_USING_UART1,BSP_GPIO_EXTI15_10_EXTERNAL</Define>
-              <IncludePath>..\..;..\..\src\kernel;..\..\src\modules;..\..\src\platform;..\..\vendor\rt-thread\include;..\..\vendor\rt-thread\components\drivers\include;..\..\src\platform\board\stm32f103c8;..\..\src\platform\board\stm32f103c8\CubeMX_Config\Inc;..\..\vendor\cmsis-core\Include;..\..\vendor\stm32f1-cmsis\Include;..\..\vendor\stm32f1-hal\Inc;..\..\src\modules\devices;..\..\src\modules\protocols;..\..\vendor\rt-thread\components\libc\compilers\common\include;..\..\vendor\rt-thread\components\libc\compilers\newlib;..\..\vendor\rt-thread-stm32-drivers;..\..\vendor\rt-thread-stm32-drivers\drivers</IncludePath>
+              <IncludePath>..\..;..\..\src;..\..\src\kernel;..\..\src\modules;..\..\src\platform;..\..\vendor\rt-thread\include;..\..\vendor\rt-thread\components\drivers\include;..\..\src\platform\board\stm32f103c8;..\..\src\platform\board\stm32f103c8\CubeMX_Config\Inc;..\..\vendor\cmsis-core\Include;..\..\vendor\stm32f1-cmsis\Include;..\..\vendor\stm32f1-hal\Inc;..\..\src\modules\devices;..\..\src\modules\protocols;..\..\src\debug;..\..\vendor\rt-thread\components\libc\compilers\common\include;..\..\vendor\rt-thread\components\libc\compilers\newlib;..\..\vendor\rt-thread-stm32-drivers;..\..\vendor\rt-thread-stm32-drivers\drivers</IncludePath>
               <LanguageC>1</LanguageC>
               <CompilerVersion>6</CompilerVersion>
               <MiscControls>--target=arm-arm-none-eabi -mcpu=cortex-m3 -mthumb --std=c11 -Oz -g</MiscControls>
@@ -162,6 +162,31 @@
               <FileName>telemetry_uart_stm32.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\src\platform\transport\telemetry_uart_stm32.c</FilePath>
+            </File>
+            <File>
+              <FileName>foxglove_debug_uart_stm32.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\platform\transport\foxglove_debug_uart_stm32.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>debug</GroupName>
+          <Files>
+            <File>
+              <FileName>foxglove_debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\debug\foxglove_debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>foxglove_debug_console.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\debug\foxglove_debug_console.c</FilePath>
+            </File>
+            <File>
+              <FileName>foxglove_debug_frame.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\debug\foxglove_debug_frame.c</FilePath>
             </File>
           </Files>
         </Group>

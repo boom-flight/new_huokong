@@ -117,6 +117,10 @@ SCons.Tool.compilation_db.generate = _cdb_generate_with_scons_output
 
 def verify_manifest_sources(objects):
     expected = set(manifest_sources(manifest))
+    if not GetDepend('HUOKONG_FOXGLOVE_DEBUG'):
+        expected = {
+            source for source in expected if not source.startswith('src/debug/')
+        }
     actual = set()
     flattened = []
     for item in objects:
