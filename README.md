@@ -7,6 +7,7 @@
 请在开发容器内从仓库根目录运行公开入口：
 
 ```sh
+tools/container.sh  #!!!此脚本在宿主机运行会自动拉起容器并安装容器所需要的相关工具和依赖例如交叉编译和烧录相关工具（工具的下载是通过执行setup-ubuntu.sh来实现的）
 tools/test.sh       # 运行主机端 C 测试 fixture，构建固件并执行仓库门禁
 tools/build.sh      # 构建固件并执行 Flash/SRAM 容量门禁
 tools/flash.sh      # 构建一次，通过 ST-LINK/SWD 烧录并校验
